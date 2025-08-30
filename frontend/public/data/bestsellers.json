@@ -1,0 +1,28 @@
+{
+  "bestsellers": [
+    {
+      "id": 1,
+      "rank": 1,
+      "badge": "Top Seller",
+      "sales": "500+ sold this month"
+    },
+    {
+      "id": 2, 
+      "rank": 2,
+      "badge": "Customer Favorite",
+      "sales": "350+ sold this month"
+    },
+    {
+      "id": 3,
+      "rank": 3,
+      "badge": "Trending",
+      "sales": "200+ sold this month"
+    },
+    {
+      "id": 4,
+      "rank": 4,
+      "badge": "Best Value",
+      "sales": "150+ sold this month"
+    }
+  ]
+}

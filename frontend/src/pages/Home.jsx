@@ -398,7 +398,7 @@ const Home = () => {
       </section>
 
       {/* Bestsellers Section with Horizontal Scroll */}
-      <section className="py-16 md:py-20 bg-neutral-50 overflow-x-hidden">
+      <section className="py-16 md:py-20 bg-neutral-50 overflow-hidden">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-12"
@@ -420,20 +420,24 @@ const Home = () => {
             <Loader text="Loading bestsellers..." />
           ) : (
             <div className="relative">
-              {/* Horizontal Scrollable Container */}
+              {/* Horizontal Scrollable Container - 4 Cards Fully Visible */}
               <div
                 id="bestseller-scroll"
-                className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
                 style={{
-                  scrollSnapType: "x mandatory",
                   WebkitOverflowScrolling: "touch",
+                  scrollPaddingLeft: "1.5rem",
+                  scrollPaddingRight: "1.5rem",
                 }}
               >
                 {bestsellers.map((product, index) => (
                   <div
                     key={product.id}
-                    className="flex-shrink-0 w-80"
-                    style={{ scrollSnapAlign: "start" }}
+                    className="flex-shrink-0 snap-start"
+                    style={{
+                      width: "calc(25% - 18px)", // 25% width minus gap (24px total gap / 4 * 3)
+                      minWidth: "280px", // Minimum width for mobile
+                    }}
                   >
                     <ProductCard
                       product={product}
@@ -451,7 +455,12 @@ const Home = () => {
                 onClick={() => {
                   const container =
                     document.getElementById("bestseller-scroll");
-                  container.scrollBy({ left: -320, behavior: "smooth" });
+                  const cardWidth = container.scrollWidth / bestsellers.length;
+                  const scrollAmount = cardWidth * 1; // Scroll by exactly 1 card width
+                  container.scrollBy({
+                    left: -scrollAmount,
+                    behavior: "smooth",
+                  });
                 }}
               >
                 <svg
@@ -475,7 +484,12 @@ const Home = () => {
                 onClick={() => {
                   const container =
                     document.getElementById("bestseller-scroll");
-                  container.scrollBy({ left: 320, behavior: "smooth" });
+                  const cardWidth = container.scrollWidth / bestsellers.length;
+                  const scrollAmount = cardWidth * 1; // Scroll by exactly 1 card width
+                  container.scrollBy({
+                    left: scrollAmount,
+                    behavior: "smooth",
+                  });
                 }}
               >
                 <svg
@@ -557,9 +571,8 @@ const Home = () => {
           </div>
         </div>
       </section>
-
       {/* All Products Section */}
-      <section className="py-16 md:py-20 bg-neutral-50 overflow-x-hidden">
+      <section className="py-16 px-2 md:py-20 bg-neutral-50 overflow-hidden">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-12"
@@ -577,20 +590,24 @@ const Home = () => {
             <Loader text="Loading products..." />
           ) : (
             <div className="relative">
-              {/* Horizontal Scrollable Container */}
+              {/* Horizontal Scrollable Container - 4 Cards Fully Visible */}
               <div
                 id="product-scroll"
-                className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                className="flex gap-6 pc-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
                 style={{
-                  scrollSnapType: "x mandatory",
                   WebkitOverflowScrolling: "touch",
+                  scrollPaddingLeft: "1.5rem", // Account for gap
+                  scrollPaddingRight: "1.5rem",
                 }}
               >
                 {products.map((product, index) => (
                   <div
                     key={product.id}
-                    className="flex-shrink-0 w-80"
-                    style={{ scrollSnapAlign: "start" }}
+                    className="flex-shrink-0 snap-start"
+                    style={{
+                      width: "calc(25% - 18px)", // 25% width minus gap (24px total gap / 4 * 3)
+                      minWidth: "280px", // Minimum width for mobile
+                    }}
                   >
                     <ProductCard product={product} index={index} />
                   </div>
@@ -603,7 +620,12 @@ const Home = () => {
                 aria-label="Scroll Left"
                 onClick={() => {
                   const container = document.getElementById("product-scroll");
-                  container.scrollBy({ left: -320, behavior: "smooth" });
+                  const cardWidth = container.scrollWidth / products.length;
+                  const scrollAmount = cardWidth * 1; // Scroll by exactly 1 card width
+                  container.scrollBy({
+                    left: -scrollAmount,
+                    behavior: "smooth",
+                  });
                 }}
               >
                 <svg
@@ -626,7 +648,12 @@ const Home = () => {
                 aria-label="Scroll Right"
                 onClick={() => {
                   const container = document.getElementById("product-scroll");
-                  container.scrollBy({ left: 320, behavior: "smooth" });
+                  const cardWidth = container.scrollWidth / products.length;
+                  const scrollAmount = cardWidth * 1; // Scroll by exactly 1 card width
+                  container.scrollBy({
+                    left: scrollAmount,
+                    behavior: "smooth",
+                  });
                 }}
               >
                 <svg

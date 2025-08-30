@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useCartStore from "../store/cartStore";
@@ -22,6 +22,23 @@ const ProductDetail = () => {
   const { addItem, items } = useCartStore();
   const { isAuthenticated } = useAuthStore();
 
+  // Helper function to resolve image URLs
+  const resolveImageUrl = (imagePath) => {
+    if (!imagePath) return '';
+    
+    // External URLs (start with http)
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Local images - ensure they start with /
+    if (!imagePath.startsWith('/')) {
+      return `/${imagePath}`;
+    }
+    
+    return imagePath;
+  };
+
   useEffect(() => {
     const loadProduct = async () => {
       try {
@@ -40,15 +57,15 @@ const ProductDetail = () => {
         try {
           // First, try to fetch from API
           if (import.meta.env.VITE_API_URL && !isNetlify()) {
-            // Try to fetch single product from backend by ID
+            console.log('Attempting to fetch from API...');
             response = await fetch(`${import.meta.env.VITE_API_URL}/products/${id}`, {
               headers: { 'Accept': 'application/json' }
             });
 
             if (response.ok) {
               product = await response.json();
+              console.log('Product fetched from API:', product);
 
-              // Optionally, fetch all products for related products
               try {
                 const allProductsRes = await fetch(`${import.meta.env.VITE_API_URL}/products`, {
                   headers: { 'Accept': 'application/json' }
@@ -68,9 +85,9 @@ const ProductDetail = () => {
             throw new Error('API not available or Netlify environment detected');
           }
         } catch (apiError) {
-          console.warn('API failed, falling back to public data:', apiError.message);
+          console.warn('API failed, falling back to products.json:', apiError.message);
           
-          // Fallback to public data files
+          // Fallback to products.json file
           try {
             response = await fetch('/data/products.json', {
               headers: { 'Accept': 'application/json' }
@@ -80,27 +97,26 @@ const ProductDetail = () => {
               const data = await response.json();
               products = data.products || data;
               product = products.find(p => p.id === parseInt(id));
+              console.log('Product fetched from products.json:', product);
             } else {
-              throw new Error('Public data files not found');
+              throw new Error('products.json file not found');
             }
           } catch (publicError) {
-            console.warn('Public data failed, using imported data:', publicError.message);
-            
-            // Final fallback to imported JSON data
-            products = productsData.products || productsData;
-            product = products.find(p => p.id === parseInt(id));
+            console.warn('products.json failed:', publicError.message);
+            throw publicError;
           }
         }
 
         // Product not found
         if (!product) {
+          console.error(`Product with ID ${id} not found`);
           navigate('/products');
           return;
         }
 
         setProduct(product);
 
-        // Related products logic: use all products list
+        // Related products logic
         let related = [];
         if (products.length > 0) {
           related = products
@@ -111,21 +127,7 @@ const ProductDetail = () => {
 
       } catch (error) {
         console.error('Error loading product:', error);
-        
-        // Ultimate fallback to imported data
-        const products = productsData.products || productsData;
-        const product = products.find(p => p.id === parseInt(id));
-        
-        if (!product) {
-          navigate('/products');
-          return;
-        }
-
-        setProduct(product);
-        const related = products
-          .filter(p => p.category === product.category && p.id !== product.id)
-          .slice(0, 4);
-        setRelatedProducts(related);
+        navigate('/products');
       } finally {
         setLoading(false);
       }
@@ -134,13 +136,34 @@ const ProductDetail = () => {
     loadProduct();
   }, [id, navigate]);
 
+  // Enhanced image handling with proper URL resolution
+  const productImages = useMemo(() => {
+    if (!product) return [];
+    
+    // Priority: images array > single image > empty array
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      // Filter and resolve image paths
+      return product.images
+        .filter(img => img && img.trim() !== '')
+        .map(img => resolveImageUrl(img));
+    } else if (product.image && typeof product.image === 'string' && product.image.trim() !== '') {
+      return [resolveImageUrl(product.image)];
+    }
+    
+    return [];
+  }, [product]);
+
+  // Reset selected image index when product changes
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [product?.id]);
+
   const formatPrice = (price) => {
     return `₹ ${(price / 100).toLocaleString("en-IN")}`;
   };
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      // Direct redirect to login page with state
       navigate("/auth", {
         state: {
           from: location.pathname,
@@ -170,7 +193,6 @@ const ProductDetail = () => {
       }
     }, 3000);
 
-    // Simulate a brief loading state for better UX
     setTimeout(() => {
       setIsAddingToCart(false);
     }, 500);
@@ -179,9 +201,6 @@ const ProductDetail = () => {
   const isInCart = items.some((item) => item.id === product?.id);
   const cartQuantity =
     items.find((item) => item.id === product?.id)?.quantity || 0;
-
-  // Use product images array, fallback to single image for backward compatibility
-  const productImages = product?.images?.length > 0 ? product.images : [product?.image].filter(Boolean);
 
   if (loading) {
     return (
@@ -192,11 +211,31 @@ const ProductDetail = () => {
   }
 
   if (!product) {
-    return null;
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-neutral-800 mb-4">Product not found</h1>
+          <Link to="/products" className="btn-primary">
+            Back to Products
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-neutral-50">
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 left-4 bg-black text-white p-2 rounded text-xs z-50 max-w-xs">
+          <p><strong>Debug Info:</strong></p>
+          <p>Product ID: {product?.id}</p>
+          <p>Images found: {productImages.length}</p>
+          <p>Selected: {selectedImageIndex}</p>
+          <p>Current src: {productImages[selectedImageIndex]}</p>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <section className="bg-white border-b border-neutral-100">
         <div className="container mx-auto px-4 py-4">
@@ -233,20 +272,37 @@ const ProductDetail = () => {
             >
               {/* Main Image */}
               <div className="relative aspect-square overflow-hidden rounded-2xl bg-white shadow-lg">
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={selectedImageIndex}
-                    src={productImages[selectedImageIndex]}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </AnimatePresence>
+                {productImages.length > 0 ? (
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={`${product.id}-${selectedImageIndex}`}
+                      src={productImages[selectedImageIndex]}
+                      alt={`${product.name} - View ${selectedImageIndex + 1}`}
+                      className="w-full h-full object-cover"
+                      initial={{ opacity: 0, scale: 1.1 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.5 }}
+                      onLoad={() => console.log('Image loaded:', productImages[selectedImageIndex])}
+                      onError={(e) => {
+                        console.error('Image failed to load:', e.target.src);
+                        e.target.src = 'https://via.placeholder.com/400x400/f3f4f6/9ca3af?text=Image+Not+Found';
+                      }}
+                    />
+                  </AnimatePresence>
+                ) : (
+                  // Fallback when no images are available
+                  <div className="w-full h-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center">
+                    <div className="text-center text-neutral-500">
+                      <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm">No image available</p>
+                    </div>
+                  </div>
+                )}
 
-                {/* Image Navigation */}
+                {/* Image Navigation - Only show if multiple images */}
                 {productImages.length > 1 && (
                   <>
                     <button
@@ -256,6 +312,7 @@ const ProductDetail = () => {
                         )
                       }
                       className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+                      aria-label="Previous image"
                     >
                       <svg
                         className="w-5 h-5"
@@ -278,6 +335,7 @@ const ProductDetail = () => {
                         )
                       }
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+                      aria-label="Next image"
                     >
                       <svg
                         className="w-5 h-5"
@@ -293,6 +351,20 @@ const ProductDetail = () => {
                         />
                       </svg>
                     </button>
+
+                    {/* Image indicator dots */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                      {productImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImageIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            selectedImageIndex === index ? 'bg-white' : 'bg-white/50'
+                          }`}
+                          aria-label={`Go to image ${index + 1}`}
+                        />
+                      ))}
+                    </div>
                   </>
                 )}
 
@@ -323,11 +395,16 @@ const ProductDetail = () => {
                           ? "border-primary-500"
                           : "border-neutral-200 hover:border-neutral-300"
                       }`}
+                      aria-label={`View image ${index + 1}`}
                     >
                       <img
                         src={image}
-                        alt={`${product.name} view ${index + 1}`}
+                        alt={`${product.name} thumbnail ${index + 1}`}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Thumbnail failed to load:', e.target.src);
+                          e.target.src = 'https://via.placeholder.com/100x100/f3f4f6/9ca3af?text=404';
+                        }}
                       />
                     </button>
                   ))}

@@ -20,25 +20,24 @@ const orderItemSchema = new mongoose.Schema({
     min: 1
   },
   image: String
+}, {
+  _id: false
 });
 
 const orderSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   orderNumber: {
     type: String,
     unique: true,
     required: true
   },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
   items: [orderItemSchema],
-  shippingInfo: {
-    fullName: {
-      type: String,
-      required: true
-    },
-    email: {
+  shippingAddress: {
+    name: {
       type: String,
       required: true
     },
@@ -46,7 +45,7 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    address: {
+    street: {
       type: String,
       required: true
     },
@@ -58,25 +57,24 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    pincode: {
+    zipCode: {
       type: String,
       required: true
+    },
+    country: {
+      type: String,
+      default: 'India'
     }
   },
-  paymentInfo: {
-    method: {
-      type: String,
-      enum: ['razorpay', 'cod'],
-      required: true
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'completed', 'failed'],
-      default: 'pending'
-    },
-    razorpayOrderId: String,
-    razorpayPaymentId: String,
-    razorpaySignature: String
+  paymentMethod: {
+    type: String,
+    enum: ['cod', 'card', 'upi', 'netbanking'],
+    required: true
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
   },
   orderStatus: {
     type: String,
@@ -91,10 +89,36 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  tax: {
+    type: Number,
+    default: 0
+  },
+  discount: {
+    type: Number,
+    default: 0
+  },
   totalAmount: {
     type: Number,
     required: true
-  }
+  },
+  estimatedDelivery: {
+    type: Date
+  },
+  trackingNumber: {
+    type: String
+  },
+  notes: {
+    type: String,
+    maxlength: 500
+  },
+  statusHistory: [{
+    status: String,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    note: String
+  }]
 }, {
   timestamps: true
 });
@@ -102,9 +126,27 @@ const orderSchema = new mongoose.Schema({
 // Generate order number before saving
 orderSchema.pre('save', function(next) {
   if (!this.orderNumber) {
-    this.orderNumber = 'ORDER' + Date.now() + Math.floor(Math.random() * 1000);
+    const timestamp = Date.now().toString();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    this.orderNumber = `MM${timestamp.slice(-6)}${random}`;
   }
   next();
 });
+
+// Add status to history when status changes
+orderSchema.pre('save', function(next) {
+  if (this.isModified('orderStatus')) {
+    this.statusHistory.push({
+      status: this.orderStatus,
+      timestamp: new Date()
+    });
+  }
+  next();
+});
+
+// Indexes for efficient queries
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ orderNumber: 1 });
+orderSchema.index({ orderStatus: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

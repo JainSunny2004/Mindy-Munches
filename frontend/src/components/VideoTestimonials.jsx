@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { motion } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
 
@@ -84,16 +83,31 @@ export const useVideoTestimonials = () => {
         setLoading(true);
         
         // Try to fetch from API first
-        const response = await fetch('/api/video-testimonials');
-        if (response.ok) {
-          const data = await response.json();
-          setTestimonials(data);
+        const apiUrl = import.meta.env.VITE_API_URL;
+        
+        if (apiUrl) {
+          const response = await fetch(`${apiUrl}/testimonials/videos`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Handle different response formats
+            if (data.success && data.data && data.data.videoTestimonials) {
+              setTestimonials(data.data.videoTestimonials);
+            } else if (data.videoTestimonials) {
+              setTestimonials(data.videoTestimonials);
+            } else {
+              throw new Error('Invalid API response format');
+            }
+          } else {
+            throw new Error(`API responded with status ${response.status}`);
+          }
         } else {
-          // Fallback to static data
-          setTestimonials(videoTestimonialsData);
+          throw new Error('No API URL configured');
         }
       } catch (err) {
         console.warn('Failed to fetch video testimonials, using static data:', err);
+        
         // Fallback to static data
         setTestimonials(videoTestimonialsData);
         setError(err);
@@ -109,195 +123,183 @@ export const useVideoTestimonials = () => {
 };
 
 const VideoTestimonials = () => {
-  const [activeVideo, setActiveVideo] = useState(null)
-  const scrollRef = useRef(null)
+  const [activeVideo, setActiveVideo] = useState(null);
+  const scrollRef = useRef(null);
+  
   const { testimonials: videoTestimonials, loading } = useVideoTestimonials();
 
-  const closeVideo = () => setActiveVideo(null)
+  const closeVideo = () => setActiveVideo(null);
 
   if (loading) {
-    return <div className="py-20 text-center">Loading video testimonials...</div>;
+    return (
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading video testimonials...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <section className="py-20 bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 relative overflow-hidden">
-      {/* Custom CSS for hiding scrollbar */}
-      <style jsx>{`
-        .hide-scrollbar {
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-          width: 0;
-          height: 0;
-        }
-      `}</style>
-
-      <div className="container mx-auto px-4 relative z-10">
-        <motion.div 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <span className="inline-block bg-orange-200 text-orange-800 text-sm font-medium px-4 py-2 rounded-full mb-4">
-            🎥 Real Customer Stories
-          </span>
-          <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-800 mb-4">
-            What Our Customers Are Saying
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Customer Video Stories
           </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Authentic testimonials from real customers who love our traditional superfoods.
           </p>
-        </motion.div>
+        </div>
 
-        {/* Horizontal Scroll Container with Navigation Arrows */}
-        <div className="relative">
-          {/* Left Arrow */}
-          <button
-            onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
-            className="absolute left-0 top-1/2 z-20 -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Scroll video testimonials left"
+        <div className="overflow-hidden">
+          <div 
+            ref={scrollRef} 
+            className="flex gap-6 pb-6 overflow-x-auto scroll-smooth"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          {/* Video Testimonials Carousel - 9:16 Reel Style */}
-          <div
-            ref={scrollRef}
-            className="flex gap-6 overflow-x-auto hide-scrollbar px-12 py-6"
-            style={{ scrollSnapType: "x mandatory", scrollBehavior: 'smooth' }}
-          >
-            {videoTestimonials.map((testimonial, index) => (
+            {Array.isArray(videoTestimonials) && videoTestimonials.map((testimonial, index) => (
               <motion.div
-                key={testimonial.id}
-                className="flex-shrink-0 w-48 md:w-56 lg:w-60 aspect-[9/16] rounded-2xl overflow-hidden shadow-lg cursor-pointer group relative"
-                initial={{ opacity: 0, y: 30 }}
+                key={testimonial.id || index}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
+                className="flex-shrink-0 w-64 cursor-pointer"
                 onClick={() => setActiveVideo(testimonial)}
-                style={{ scrollSnapAlign: 'center' }}
               >
-                <img
-                  src={testimonial.thumbnail}
-                  alt={`${testimonial.name} testimonial`}
-                  className="w-full h-full object-cover"
-                />
-
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                
-                {/* Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <svg className="w-6 h-6 text-primary-600 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
+                <div className="relative bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                  <div className="relative h-48 bg-gray-200 overflow-hidden">
+                    <img
+                      src={testimonial.thumbnail}
+                      alt={testimonial.name}
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=710&fit=crop';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white bg-opacity-90 rounded-full p-4 transform scale-90 hover:scale-100 transition-transform duration-300">
+                        <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs">
+                      {testimonial.duration}
+                    </div>
                   </div>
-                </div>
-                
-                {/* Customer Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <h4 className="text-sm font-semibold truncate">{testimonial.name}</h4>
-                  <p className="text-xs text-white/80 truncate">{testimonial.location}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <span key={i} className="text-yellow-400 text-xs">⭐</span>
-                    ))}
-                    <span className="text-xs text-white/60 ml-2">{testimonial.duration}</span>
+                  
+                  <div className="p-4">
+                    <h4 className="font-semibold text-gray-900 mb-1">{testimonial.name}</h4>
+                    <p className="text-sm text-green-600 mb-1">{testimonial.title}</p>
+                    <p className="text-sm text-gray-500 mb-2">{testimonial.location}</p>
+                    
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <svg
+                          key={i}
+                          className={`w-4 h-4 ${i < testimonial.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
+        </div>
 
-          {/* Right Arrow */}
+        {/* Navigation buttons */}
+        <div className="flex justify-center mt-8 gap-4">
+          <button
+            onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
+            className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full transition-colors duration-300"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
           <button
             onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })}
-            className="absolute right-0 top-1/2 z-20 -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Scroll video testimonials right"
+            className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full transition-colors duration-300"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
-
-        {/* Video Modal */}
-        {activeVideo && (
-          <motion.div
-            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeVideo}
-          >
-            <motion.div
-              className="bg-white rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                    <span className="text-primary-600 font-semibold">
-                      {activeVideo.name.charAt(0)}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-neutral-800">{activeVideo.name}</h3>
-                    <p className="text-sm text-neutral-500">{activeVideo.location}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={closeVideo}
-                  className="text-neutral-400 hover:text-neutral-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Video Content */}
-              <div className="aspect-video">
-                <iframe
-                  src={activeVideo.videoSrc}
-                  title={`${activeVideo.name} testimonial`}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              </div>
-
-              {/* Video Info */}
-              <div className="p-6">
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(activeVideo.rating)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">⭐</span>
-                  ))}
-                </div>
-                <p className="text-neutral-700 italic">
-                  "{activeVideo.fullQuote}"
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
       </div>
-    </section>
-  )
-}
 
-export default VideoTestimonials
+      {/* Video Modal */}
+      {activeVideo && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"
+          onClick={closeVideo}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative">
+              <button
+                onClick={closeVideo}
+                className="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full p-2 z-10 hover:bg-opacity-70 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              
+              <video
+                controls
+                autoPlay
+                className="w-full aspect-video bg-black"
+                poster={activeVideo.thumbnail}
+              >
+                <source src={activeVideo.videoSrc} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{activeVideo.name}</h3>
+                <p className="text-green-600 font-medium mb-1">{activeVideo.title}</p>
+                <p className="text-gray-600 mb-4">{activeVideo.location}</p>
+                <p className="text-gray-800 italic text-lg">"{activeVideo.fullQuote}"</p>
+                
+                <div className="flex items-center mt-4">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className={`w-5 h-5 ${i < activeVideo.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="ml-2 text-sm text-gray-600">({activeVideo.rating}/5)</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </section>
+  );
+};
+
+export default VideoTestimonials;

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-//eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import ProductCard from '../components/ProductCard'
 import SearchFilters from '../components/SearchFilters'
 import Loader from '../components/Loader'
 import EmptyState from '../components/EmptyState'
 import { Link } from 'react-router-dom'
+
+// Import fallback data
+import productsData from '../data/products.json'
 
 const Products = () => {
   const [products, setProducts] = useState([])
@@ -23,21 +25,22 @@ const Products = () => {
 
         // Helper function to check if we're in Netlify environment
         const isNetlify = () => {
-          return window.location.hostname.includes('netlify.app') || 
+          return window.location.hostname.includes('netlify.app') ||
                  window.location.hostname.includes('netlify.com') ||
                  import.meta.env.VITE_NETLIFY_DEPLOY === 'true'
         }
 
         let response
-
         try {
           // First, try to fetch from API
           if (import.meta.env.VITE_API_URL && !isNetlify()) {
             response = await fetch(`${import.meta.env.VITE_API_URL}/products`, {
-              headers: { 'Accept': 'application/json' },
+              headers: {
+                'Accept': 'application/json'
+              },
               cache: 'no-store'
             })
-
+            
             if (!response.ok) {
               throw new Error(`API failed with status ${response.status}`)
             }
@@ -50,9 +53,11 @@ const Products = () => {
           // Fallback to public data files
           try {
             response = await fetch('/data/products.json', {
-              headers: { 'Accept': 'application/json' }
+              headers: {
+                'Accept': 'application/json'
+              }
             })
-
+            
             if (!response.ok) {
               throw new Error('Public data files not found')
             }
@@ -60,7 +65,7 @@ const Products = () => {
             console.warn('Public data failed, using imported data:', publicError.message)
             
             // Final fallback to imported JSON data
-            const allProducts = productsData.products
+            const allProducts = Array.isArray(productsData.products) ? productsData.products : []
             setProducts(allProducts)
             setFilteredProducts(allProducts)
             return
@@ -69,7 +74,26 @@ const Products = () => {
 
         // Parse the successful response
         const data = await response.json()
-        const productsArray = data?.products || data || []
+        let productsArray = []
+
+        // Handle different API response formats
+        if (data.success && data.data && data.data.products) {
+          productsArray = data.data.products
+        } else if (data.products) {
+          productsArray = data.products
+        } else if (Array.isArray(data)) {
+          productsArray = data
+        } else {
+          console.warn('Unexpected API response format:', data)
+          productsArray = []
+        }
+
+        // Ensure productsArray is actually an array
+        if (!Array.isArray(productsArray)) {
+          console.error('Products data is not an array:', productsArray)
+          productsArray = []
+        }
+
         setProducts(productsArray)
         setFilteredProducts(productsArray)
 
@@ -77,7 +101,7 @@ const Products = () => {
         console.error('Error loading products:', error)
         
         // Ultimate fallback to imported data
-        const allProducts = productsData.products
+        const allProducts = Array.isArray(productsData.products) ? productsData.products : []
         setProducts(allProducts)
         setFilteredProducts(allProducts)
       } finally {
@@ -88,219 +112,180 @@ const Products = () => {
     loadProducts()
   }, [])
 
+  // Filter and sort products
+  useEffect(() => {
+    let filtered = Array.isArray(products) ? [...products] : []
+
+    // Apply category filter
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(product => 
+        product.category?.toLowerCase() === selectedCategory.toLowerCase()
+      )
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'price-low':
+          return (a.price || 0) - (b.price || 0)
+        case 'price-high':
+          return (b.price || 0) - (a.price || 0)
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '')
+        case 'category':
+          return (a.category || '').localeCompare(b.category || '')
+        default:
+          return 0
+      }
+    })
+
+    setFilteredProducts(filtered)
+  }, [products, selectedCategory, searchTerm, sortBy])
+
+  if (loading) {
+    return <Loader />
+  }
+
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-50 to-neutral-50 py-16">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            className="text-center max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-neutral-800 mb-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Our Products
             </h1>
-            <p className="text-lg text-neutral-600 mb-8">
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               Discover our range of traditional superfoods, carefully crafted for modern lifestyles. 
               From protein-rich Makhana to versatile Sattu - find the perfect healthy snack.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <span className="bg-white px-4 py-2 rounded-full text-sm font-medium text-neutral-700 shadow-sm">
-                🌱 100% Natural
-              </span>
-              <span className="bg-white px-4 py-2 rounded-full text-sm font-medium text-neutral-700 shadow-sm">
-                💪 High Protein
-              </span>
-              <span className="bg-white px-4 py-2 rounded-full text-sm font-medium text-neutral-700 shadow-sm">
-                🎨 Customizable
-              </span>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
 
-      {/* Advanced Search & Filters */}
-      <SearchFilters
-        products={products}
-        onFilteredProducts={setFilteredProducts}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-      />
+          {/* Search and Filters */}
+          <SearchFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+          />
 
-      {/* Products Grid */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          {loading ? (
-            <Loader text="Loading products..." />
-          ) : filteredProducts.length === 0 ? (
-            <EmptyState
-              icon="🔍"
-              title="No products found"
-              description={searchTerm || selectedCategory !== 'All' 
-                ? "Try adjusting your search or filter criteria."
-                : "No products are available at the moment."
-              }
-              action={
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => {
-                      setSearchTerm('')
-                      setSelectedCategory('All')
-                      setSortBy('name')
-                      setShowFilters(false)
-                    }}
-                    className="btn-secondary"
-                  >
-                    Clear Filters
-                  </button>
-                  <Link to="/" className="btn-primary">
-                    Back to Home
-                  </Link>
-                </div>
-              }
-            />
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6 }}
-            >
-              {/* Results Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                <div>
-                  <p className="text-neutral-600">
-                    Showing <span className="font-semibold">{filteredProducts.length}</span> of {products.length} products
-                  </p>
-                  {filteredProducts.some(p => p.featured) && (
-                    <div className="flex items-center gap-2 text-sm text-primary-600 mt-1">
-                      <span className="w-2 h-2 bg-primary-500 rounded-full"></span>
-                      {filteredProducts.filter(p => p.featured).length} featured products
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Products Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map((product, index) => (
-                  <ProductCard 
-                    key={product.id ?? index} 
-                    product={product} 
-                    index={index}
-                    viewMode="grid"
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl font-heading font-bold text-neutral-800 mb-4">
-              Shop by Category
-            </h2>
-            <p className="text-lg text-neutral-600">
-              Explore our carefully curated selection of traditional superfoods
+          {/* Results Count */}
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-gray-600">
+              Showing {Array.isArray(filteredProducts) ? filteredProducts.length : 0} of {Array.isArray(products) ? products.length : 0} products
             </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <motion.div 
-              className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-8 text-center group cursor-pointer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              onClick={() => {
-                setSelectedCategory('Makhana')
-                setShowFilters(false)
-              }}
-            >
-              <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-white text-3xl">🌾</span>
-              </div>
-              <h3 className="text-xl font-semibold text-neutral-800 mb-2">Makhana</h3>
-              <p className="text-neutral-600 mb-4">
-                Protein-rich fox nuts, perfect for guilt-free snacking. Low glycemic index and completely additive-free.
-              </p>
-              <span className="text-primary-600 font-medium group-hover:text-primary-700">
-                View Makhana Products →
-              </span>
-            </motion.div>
-
-            <motion.div 
-              className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-8 text-center group cursor-pointer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              onClick={() => {
-                setSelectedCategory('Sattu')
-                setShowFilters(false)
-              }}
-            >
-              <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-white text-3xl">💪</span>
-              </div>
-              <h3 className="text-xl font-semibold text-neutral-800 mb-2">Sattu</h3>
-              <p className="text-neutral-600 mb-4">
-                Plant protein powerhouse packed with fiber and minerals. Versatile ingredient for modern kitchens.
-              </p>
-              <span className="text-primary-600 font-medium group-hover:text-primary-700">
-                View Sattu Products →
-              </span>
-            </motion.div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-primary-500 to-primary-600">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            className="text-center text-white"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl font-heading font-bold mb-4">
-              Need Help Choosing?
-            </h2>
-            <p className="text-primary-100 mb-8 max-w-2xl mx-auto">
-              Not sure which products are right? Our team can help find the perfect healthy snacks for your lifestyle.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/contact" className="bg-white text-primary-600 font-medium px-6 py-3 rounded-lg hover:bg-primary-50 transition-colors">
-                Contact Us
-              </Link>
-              <Link to="/recipes" className="border border-white text-white font-medium px-6 py-3 rounded-lg hover:bg-white hover:text-primary-600 transition-colors">
-                View Recipes
-              </Link>
+      {/* Products Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {Array.isArray(filteredProducts) && filteredProducts.length === 0 ? (
+          <EmptyState 
+            title="No products found"
+            description="Try adjusting your search terms or filters"
+            actionText="Clear Filters"
+            onAction={() => {
+              setSearchTerm('')
+              setSelectedCategory('All')
+              setSortBy('name')
+            }}
+          />
+        ) : (
+          <>
+            {/* Featured Products Section */}
+            {Array.isArray(filteredProducts) && filteredProducts.some(p => p.featured || p.isFeatured) && (
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Products</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {filteredProducts
+                    .filter(product => product.featured || product.isFeatured)
+                    .slice(0, 3)
+                    .map((product) => (
+                      <motion.div
+                        key={product._id || product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <ProductCard product={product} featured />
+                      </motion.div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+
+            {/* All Products Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.isArray(filteredProducts) && filteredProducts.map((product, index) => (
+                <motion.div
+                  key={product._id || product.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
             </div>
-          </motion.div>
-        </div>
-      </section>
+
+            {/* Category Highlights */}
+            <div className="mt-16 bg-white rounded-2xl p-8 shadow-sm">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+                Explore our carefully curated selection of traditional superfoods
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Makhana</h3>
+                  <p className="text-gray-600 mb-4">
+                    Protein-rich fox nuts, perfect for guilt-free snacking. Low glycemic index and completely additive-free.
+                  </p>
+                  <Link 
+                    to="/products?category=makhana" 
+                    className="text-green-600 font-medium hover:text-green-700"
+                  >
+                    View Makhana Products →
+                  </Link>
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Sattu</h3>
+                  <p className="text-gray-600 mb-4">
+                    Plant protein powerhouse packed with fiber and minerals. Versatile ingredient for modern kitchens.
+                  </p>
+                  <Link 
+                    to="/products?category=sattu" 
+                    className="text-orange-600 font-medium hover:text-orange-700"
+                  >
+                    View Sattu Products →
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="text-center mt-8">
+                <p className="text-gray-600 mb-4">
+                  Not sure which products are right? Our team can help find the perfect healthy snacks for your lifestyle.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

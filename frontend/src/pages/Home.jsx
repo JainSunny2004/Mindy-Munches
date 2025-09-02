@@ -6,10 +6,6 @@ import TestimonialCard from "../components/TestimonialCard";
 import { useVideoTestimonials } from "../components/VideoTestimonials";
 import Loader from "../components/Loader";
 
-// Import fallback data
-import productsData from "../data/products.json";
-import testimonialsData from "../data/testimonials.json";
-
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
@@ -68,20 +64,11 @@ const Home = () => {
       try {
         setLoading(true);
 
-        // Helper function to check if we're in Netlify environment
-        const isNetlify = () => {
-          return (
-            window.location.hostname.includes("netlify.app") ||
-            window.location.hostname.includes("netlify.com") ||
-            import.meta.env.VITE_NETLIFY_DEPLOY === "true"
-          );
-        };
-
         let productsResponse, testimonialsResponse;
         
         try {
           // First, try to fetch from API
-          if (import.meta.env.VITE_API_URL && !isNetlify()) {
+          if (import.meta.env.VITE_API_URL) {
             const [apiProductsResponse, apiTestimonialsResponse] = await Promise.all([
               fetch(`${import.meta.env.VITE_API_URL}/products`),
               fetch(`${import.meta.env.VITE_API_URL}/testimonials`),
@@ -94,34 +81,53 @@ const Home = () => {
               throw new Error("API responses not ok");
             }
           } else {
-            throw new Error("API not available or Netlify environment detected");
+            throw new Error("API not available");
           }
         } catch (apiError) {
-          console.warn("API failed, falling back to public data:", apiError.message);
+          console.warn("API failed, falling back to local data:", apiError.message);
           
-          // Fallback to public data files
+          // Fallback to local JSON files in public folder
           try {
-            const [publicProductsResponse, publicTestimonialsResponse] = await Promise.all([
+            const [localProductsResponse, localTestimonialsResponse] = await Promise.all([
               fetch("/data/products.json"),
               fetch("/data/testimonials.json"),
             ]);
 
-            if (publicProductsResponse.ok && publicTestimonialsResponse.ok) {
-              productsResponse = publicProductsResponse;
-              testimonialsResponse = publicTestimonialsResponse;
+            if (localProductsResponse.ok && localTestimonialsResponse.ok) {
+              productsResponse = localProductsResponse;
+              testimonialsResponse = localTestimonialsResponse;
             } else {
-              throw new Error("Public data files not found");
+              throw new Error("Local data files not found");
             }
-          } catch (publicError) {
-            console.warn("Public data failed, using imported data:", publicError.message);
+          } catch (localError) {
+            console.warn("Local data failed, using hardcoded fallback:", localError.message);
             
-            // Final fallback to imported JSON data
-            const allProducts = Array.isArray(productsData.products) ? productsData.products : [];
-            const allTestimonials = Array.isArray(testimonialsData.testimonials) ? testimonialsData.testimonials : [];
+            // Final fallback to hardcoded data
+            const fallbackProducts = [
+              {
+                id: 1,
+                name: "Premium Makhana",
+                description: "Handpicked fox nuts roasted with traditional methods",
+                price: 299,
+                category: "superfoods",
+                images: [{ url: "/Sweet-makhana.png", alt: "Premium Makhana" }],
+                isFeatured: true
+              }
+            ];
             
-            setProducts(allProducts.slice(0, 6));
-            setBestsellers(allProducts.slice(0, 3));
-            setTestimonials(allTestimonials);
+            const fallbackTestimonials = [
+              {
+                id: 1,
+                name: "Priya Sharma",
+                message: "Amazing products! Highly recommended.",
+                rating: 5,
+                location: "Mumbai, India"
+              }
+            ];
+            
+            setProducts(fallbackProducts.slice(0, 6));
+            setBestsellers(fallbackProducts.slice(0, 3));
+            setTestimonials(fallbackTestimonials);
             return;
           }
         }
@@ -130,7 +136,7 @@ const Home = () => {
         const productsData = await productsResponse.json();
         const testimonialsData = await testimonialsResponse.json();
 
-        // Handle different API response formats
+        // Handle different response formats
         let allProducts = [];
         let allTestimonials = [];
 
@@ -163,13 +169,32 @@ const Home = () => {
       } catch (error) {
         console.error("Error loading data:", error);
         
-        // Ultimate fallback to imported data
-        const allProducts = Array.isArray(productsData.products) ? productsData.products : [];
-        const allTestimonials = Array.isArray(testimonialsData.testimonials) ? testimonialsData.testimonials : [];
+        // Ultimate fallback to hardcoded data
+        const fallbackProducts = [
+          {
+            id: 1,
+            name: "Premium Makhana",
+            description: "Handpicked fox nuts roasted with traditional methods",
+            price: 299,
+            category: "superfoods",
+            images: [{ url: "/Sweet-makhana.png", alt: "Premium Makhana" }],
+            isFeatured: true
+          }
+        ];
         
-        setProducts(allProducts.slice(0, 6));
-        setBestsellers(allProducts.slice(0, 3));
-        setTestimonials(allTestimonials);
+        const fallbackTestimonials = [
+          {
+            id: 1,
+            name: "Priya Sharma",
+            message: "Amazing products! Highly recommended.",
+            rating: 5,
+            location: "Mumbai, India"
+          }
+        ];
+        
+        setProducts(fallbackProducts.slice(0, 6));
+        setBestsellers(fallbackProducts.slice(0, 3));
+        setTestimonials(fallbackTestimonials);
       } finally {
         setLoading(false);
       }
@@ -281,26 +306,6 @@ const Home = () => {
               }`}
             />
           ))}
-        </div>
-      </section>
-
-      {/* Certifications */}
-      <section className="py-8 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              Handpicked fox nuts with ancient processing methods
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-              Ancient grains roasted to perfection
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              Every package tells a story of tradition
-            </div>
-          </div>
         </div>
       </section>
 

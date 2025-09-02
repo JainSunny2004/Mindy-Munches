@@ -18,7 +18,6 @@ const getAllProducts = async (req, res) => {
 
     // Build filter object
     const filter = {};
-
     if (isActive !== 'false') {
       filter.isActive = true;
     }
@@ -44,12 +43,12 @@ const getAllProducts = async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Execute query
+    // Execute query - FIXED: Use correct populate path
     const products = await Product.find(filter)
       .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit))
-      .populate('reviews.user', 'name');
+      .populate('ratings.reviews.user', 'name'); // ← Fixed: ratings.reviews.user instead of reviews.user
 
     // Get total count for pagination
     const total = await Product.countDocuments(filter);
@@ -84,8 +83,8 @@ const getFeaturedProducts = async (req, res) => {
       isFeatured: true,
       isActive: true
     })
-    .sort({ createdAt: -1 })
-    .limit(8);
+      .sort({ createdAt: -1 })
+      .limit(8);
 
     res.json({
       success: true,
@@ -170,7 +169,7 @@ const searchProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('reviews.user', 'name');
+      .populate('ratings.reviews.user', 'name'); // ← Fixed: correct populate path
 
     if (!product) {
       return res.status(404).json({
@@ -351,7 +350,7 @@ const addReview = async (req, res) => {
     }
 
     // Check if user already reviewed this product
-    const existingReview = product.reviews.find(
+    const existingReview = product.ratings.reviews.find(
       review => review.user.toString() === userId.toString()
     );
 
@@ -363,16 +362,16 @@ const addReview = async (req, res) => {
     }
 
     // Add new review
-    product.reviews.push({
+    product.ratings.reviews.push({
       user: userId,
       rating,
       comment
     });
 
     // Update ratings
-    const totalRating = product.reviews.reduce((sum, review) => sum + review.rating, 0);
-    product.ratings.average = totalRating / product.reviews.length;
-    product.ratings.count = product.reviews.length;
+    const totalRating = product.ratings.reviews.reduce((sum, review) => sum + review.rating, 0);
+    product.ratings.average = totalRating / product.ratings.reviews.length;
+    product.ratings.count = product.ratings.reviews.length;
 
     await product.save();
 
@@ -380,7 +379,7 @@ const addReview = async (req, res) => {
       success: true,
       message: 'Review added successfully',
       data: {
-        review: product.reviews[product.reviews.length - 1]
+        review: product.ratings.reviews[product.ratings.reviews.length - 1]
       }
     });
   } catch (error) {
@@ -397,8 +396,8 @@ const addReview = async (req, res) => {
 const getProductReviews = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('reviews.user', 'name')
-      .select('reviews ratings');
+      .populate('ratings.reviews.user', 'name') // ← Fixed: correct populate path
+      .select('ratings');
 
     if (!product) {
       return res.status(404).json({
@@ -410,7 +409,7 @@ const getProductReviews = async (req, res) => {
     res.json({
       success: true,
       data: {
-        reviews: product.reviews,
+        reviews: product.ratings.reviews,
         ratings: product.ratings
       }
     });

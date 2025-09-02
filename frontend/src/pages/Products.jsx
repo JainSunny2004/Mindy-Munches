@@ -6,13 +6,11 @@ import Loader from '../components/Loader'
 import EmptyState from '../components/EmptyState'
 import { Link } from 'react-router-dom'
 
-// Import fallback data
-import productsData from '../data/products.json'
-
 const Products = () => {
   const [products, setProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [sortBy, setSortBy] = useState('name')
@@ -22,52 +20,68 @@ const Products = () => {
     const loadProducts = async () => {
       try {
         setLoading(true)
-
-        // Helper function to check if we're in Netlify environment
-        const isNetlify = () => {
-          return window.location.hostname.includes('netlify.app') ||
-                 window.location.hostname.includes('netlify.com') ||
-                 import.meta.env.VITE_NETLIFY_DEPLOY === 'true'
-        }
+        setError(null)
 
         let response
         try {
           // First, try to fetch from API
-          if (import.meta.env.VITE_API_URL && !isNetlify()) {
+          if (import.meta.env.VITE_API_URL) {
             response = await fetch(`${import.meta.env.VITE_API_URL}/products`, {
               headers: {
                 'Accept': 'application/json'
               },
               cache: 'no-store'
             })
-            
+
             if (!response.ok) {
               throw new Error(`API failed with status ${response.status}`)
             }
           } else {
-            throw new Error('API not available or Netlify environment detected')
+            throw new Error('API not available')
           }
         } catch (apiError) {
-          console.warn('API failed, falling back to public data:', apiError.message)
+          console.warn('API failed, falling back to local data:', apiError.message)
           
-          // Fallback to public data files
+          // Fallback to local JSON file in public folder
           try {
             response = await fetch('/data/products.json', {
               headers: {
                 'Accept': 'application/json'
               }
             })
-            
+
             if (!response.ok) {
-              throw new Error('Public data files not found')
+              throw new Error('Local data file not found')
             }
-          } catch (publicError) {
-            console.warn('Public data failed, using imported data:', publicError.message)
+          } catch (localError) {
+            console.warn('Local data failed, using hardcoded fallback:', localError.message)
             
-            // Final fallback to imported JSON data
-            const allProducts = Array.isArray(productsData.products) ? productsData.products : []
-            setProducts(allProducts)
-            setFilteredProducts(allProducts)
+            // Final fallback to hardcoded data
+            const fallbackProducts = [
+              {
+                id: 1,
+                name: "Premium Makhana",
+                description: "Handpicked fox nuts roasted with traditional methods",
+                price: 299,
+                category: "superfoods",
+                images: [{ url: "/Sweet-makhana.png", alt: "Premium Makhana" }],
+                isFeatured: true,
+                stock: 50
+              },
+              {
+                id: 2,
+                name: "Organic Sattu",
+                description: "Traditional roasted gram flour packed with protein",
+                price: 199,
+                category: "grains",
+                images: [{ url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400", alt: "Organic Sattu" }],
+                isFeatured: true,
+                stock: 30
+              }
+            ]
+
+            setProducts(fallbackProducts)
+            setFilteredProducts(fallbackProducts)
             return
           }
         }
@@ -99,11 +113,24 @@ const Products = () => {
 
       } catch (error) {
         console.error('Error loading products:', error)
+        setError('Failed to load products. Please try refreshing the page.')
         
-        // Ultimate fallback to imported data
-        const allProducts = Array.isArray(productsData.products) ? productsData.products : []
-        setProducts(allProducts)
-        setFilteredProducts(allProducts)
+        // Ultimate fallback to hardcoded data
+        const fallbackProducts = [
+          {
+            id: 1,
+            name: "Premium Makhana",
+            description: "Handpicked fox nuts roasted with traditional methods",
+            price: 299,
+            category: "superfoods",
+            images: [{ url: "/Sweet-makhana.png", alt: "Premium Makhana" }],
+            isFeatured: true,
+            stock: 50
+          }
+        ]
+
+        setProducts(fallbackProducts)
+        setFilteredProducts(fallbackProducts)
       } finally {
         setLoading(false)
       }
@@ -112,47 +139,30 @@ const Products = () => {
     loadProducts()
   }, [])
 
-  // Filter and sort products
-  useEffect(() => {
-    let filtered = Array.isArray(products) ? [...products] : []
-
-    // Apply category filter
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(product => 
-        product.category?.toLowerCase() === selectedCategory.toLowerCase()
-      )
-    }
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return (a.price || 0) - (b.price || 0)
-        case 'price-high':
-          return (b.price || 0) - (a.price || 0)
-        case 'name':
-          return (a.name || '').localeCompare(b.name || '')
-        case 'category':
-          return (a.category || '').localeCompare(b.category || '')
-        default:
-          return 0
-      }
-    })
-
-    setFilteredProducts(filtered)
-  }, [products, selectedCategory, searchTerm, sortBy])
+  // Handle filtered products from SearchFilters
+  const handleFilteredProducts = (filtered) => {
+    setFilteredProducts(Array.isArray(filtered) ? filtered : [])
+  }
 
   if (loading) {
     return <Loader />
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Products</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -170,18 +180,6 @@ const Products = () => {
             </p>
           </div>
 
-          {/* Search and Filters */}
-          <SearchFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-          />
-
           {/* Results Count */}
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-600">
@@ -193,6 +191,20 @@ const Products = () => {
 
       {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search Filters */}
+        <SearchFilters
+          products={products}
+          onFilteredProducts={handleFilteredProducts}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+        />
+
         {Array.isArray(filteredProducts) && filteredProducts.length === 0 ? (
           <EmptyState 
             title="No products found"

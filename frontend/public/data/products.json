@@ -1,119 +1,119 @@
-{
-  "success": true,
-  "products": [
-    {
-      "id": 1,
-      "name": "Premium Makhana",
-      "description": "Handpicked fox nuts roasted with traditional methods. Perfect for healthy snacking with high protein content.",
-      "price": 299,
-      "originalPrice": 349,
-      "category": "superfoods",
-      "stock": 50,
-      "sku": "MKN001",
-      "images": [
-        {
-          "url": "/Sweet-makhana.png",
-          "alt": "Premium Makhana",
-          "isPrimary": true
-        }
-      ],
-      "isFeatured": true,
-      "isActive": true,
-      "isOrganic": true,
-      "weight": {
-        "value": 250,
-        "unit": "g"
-      },
-      "nutritionalInfo": {
-        "calories": 347,
-        "protein": 9.7,
-        "carbs": 76.9,
-        "fat": 0.1,
-        "fiber": 14.5
-      },
-      "tags": ["healthy", "protein-rich", "gluten-free", "traditional"]
-    },
-    {
-      "id": 2,
-      "name": "Organic Sattu Powder",
-      "description": "Traditional roasted gram flour packed with plant protein and essential nutrients.",
-      "price": 199,
-      "originalPrice": 249,
-      "category": "grains",
-      "stock": 75,
-      "sku": "STT001",
-      "images": [
-        {
-          "url": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400",
-          "alt": "Organic Sattu Powder",
-          "isPrimary": true
-        }
-      ],
-      "isFeatured": true,
-      "isActive": true,
-      "isOrganic": true,
-      "weight": {
-        "value": 500,
-        "unit": "g"
-      },
-      "nutritionalInfo": {
-        "calories": 406,
-        "protein": 20.6,
-        "carbs": 58.5,
-        "fat": 6.2,
-        "fiber": 18.3
-      },
-      "tags": ["protein", "energy", "traditional", "versatile"]
-    },
-    {
-      "id": 3,
-      "name": "Traditional Turmeric Powder",
-      "description": "Pure organic turmeric powder with high curcumin content for health and cooking.",
-      "price": 149,
-      "originalPrice": 179,
-      "category": "spices",
-      "stock": 100,
-      "sku": "TUR001",
-      "images": [
-        {
-          "url": "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=400",
-          "alt": "Traditional Turmeric Powder",
-          "isPrimary": true
-        }
-      ],
-      "isFeatured": false,
-      "isActive": true,
-      "isOrganic": true,
-      "weight": {
-        "value": 200,
-        "unit": "g"
-      },
-      "tags": ["anti-inflammatory", "antioxidant", "medicinal", "cooking"]
-    },
-    {
-      "id": 4,
-      "name": "Cold-Pressed Coconut Oil",
-      "description": "Pure virgin coconut oil extracted using traditional cold-press methods.",
-      "price": 399,
-      "originalPrice": 450,
-      "category": "oils",
-      "stock": 30,
-      "sku": "CCO001",
-      "images": [
-        {
-          "url": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400",
-          "alt": "Cold-Pressed Coconut Oil",
-          "isPrimary": true
-        }
-      ],
-      "isFeatured": true,
-      "isActive": true,
-      "isOrganic": true,
-      "weight": {
-        "value": 500,
-        "unit": "ml"
-      },
-      "tags": ["virgin", "cold-pressed", "cooking", "health"]
-    }
-  ]
-}
+// {
+//   "success": true,
+//   "products": [
+//     {
+//       "id": 1,
+//       "name": "Premium Makhana",
+//       "description": "Handpicked fox nuts roasted with traditional methods. Perfect for healthy snacking with high protein content.",
+//       "price": 299,
+//       "originalPrice": 349,
+//       "category": "superfoods",
+//       "stock": 50,
+//       "sku": "MKN001",
+//       "images": [
+//         {
+//           "url": "/Sweet-makhana.png",
+//           "alt": "Premium Makhana",
+//           "isPrimary": true
+//         }
+//       ],
+//       "isFeatured": true,
+//       "isActive": true,
+//       "isOrganic": true,
+//       "weight": {
+//         "value": 250,
+//         "unit": "g"
+//       },
+//       "nutritionalInfo": {
+//         "calories": 347,
+//         "protein": 9.7,
+//         "carbs": 76.9,
+//         "fat": 0.1,
+//         "fiber": 14.5
+//       },
+//       "tags": ["healthy", "protein-rich", "gluten-free", "traditional"]
+//     },
+//     {
+//       "id": 2,
+//       "name": "Organic Sattu Powder",
+//       "description": "Traditional roasted gram flour packed with plant protein and essential nutrients.",
+//       "price": 199,
+//       "originalPrice": 249,
+//       "category": "grains",
+//       "stock": 75,
+//       "sku": "STT001",
+//       "images": [
+//         {
+//           "url": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400",
+//           "alt": "Organic Sattu Powder",
+//           "isPrimary": true
+//         }
+//       ],
+//       "isFeatured": true,
+//       "isActive": true,
+//       "isOrganic": true,
+//       "weight": {
+//         "value": 500,
+//         "unit": "g"
+//       },
+//       "nutritionalInfo": {
+//         "calories": 406,
+//         "protein": 20.6,
+//         "carbs": 58.5,
+//         "fat": 6.2,
+//         "fiber": 18.3
+//       },
+//       "tags": ["protein", "energy", "traditional", "versatile"]
+//     },
+//     {
+//       "id": 3,
+//       "name": "Traditional Turmeric Powder",
+//       "description": "Pure organic turmeric powder with high curcumin content for health and cooking.",
+//       "price": 149,
+//       "originalPrice": 179,
+//       "category": "spices",
+//       "stock": 100,
+//       "sku": "TUR001",
+//       "images": [
+//         {
+//           "url": "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=400",
+//           "alt": "Traditional Turmeric Powder",
+//           "isPrimary": true
+//         }
+//       ],
+//       "isFeatured": false,
+//       "isActive": true,
+//       "isOrganic": true,
+//       "weight": {
+//         "value": 200,
+//         "unit": "g"
+//       },
+//       "tags": ["anti-inflammatory", "antioxidant", "medicinal", "cooking"]
+//     },
+//     {
+//       "id": 4,
+//       "name": "Cold-Pressed Coconut Oil",
+//       "description": "Pure virgin coconut oil extracted using traditional cold-press methods.",
+//       "price": 399,
+//       "originalPrice": 450,
+//       "category": "oils",
+//       "stock": 30,
+//       "sku": "CCO001",
+//       "images": [
+//         {
+//           "url": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400",
+//           "alt": "Cold-Pressed Coconut Oil",
+//           "isPrimary": true
+//         }
+//       ],
+//       "isFeatured": true,
+//       "isActive": true,
+//       "isOrganic": true,
+//       "weight": {
+//         "value": 500,
+//         "unit": "ml"
+//       },
+//       "tags": ["virgin", "cold-pressed", "cooking", "health"]
+//     }
+//   ]
+// }

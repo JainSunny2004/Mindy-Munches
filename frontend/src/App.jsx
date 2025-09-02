@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { Component } from 'react';
@@ -6,63 +6,54 @@ import { Component } from 'react';
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Auth from "./pages/Auth";
+
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminInvite from "./pages/AdminInvite";
+import ProductManagement from "./components/admin/ProductManagement"; // Import your product management page
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import BottomBar from "./components/BottomBar";
 
 // Error Boundary Component
 class ErrorBoundary extends Component {
   constructor(props) {
-    super(props)
-    this.state = { hasError: false, error: null }
+    super(props);
+    this.state = { hasError: false, error: null };
   }
-
   static getDerivedStateFromError(error) {
-    return { hasError: true }
+    return { hasError: true };
   }
-
   componentDidCatch(error, errorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo)
-    this.setState({ error })
+    console.error("Error caught by boundary:", error, errorInfo);
+    this.setState({ error });
   }
-
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-            <div className="text-red-500 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Oops! Something went wrong
-            </h2>
-            <p className="text-gray-600 mb-6">
-              We encountered an error while loading this page. Please try refreshing.
-            </p>
+        <div className="min-h-screen flex items-center justify-center p-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Something went wrong.</h1>
             <button
               onClick={() => window.location.reload()}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className="px-4 py-2 bg-green-600 text-white rounded"
             >
               Refresh Page
             </button>
           </div>
         </div>
-      )
+      );
     }
-
-    return this.props.children
+    return this.props.children;
   }
 }
 
+// Page animation variants
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
   in: { opacity: 1, y: 0 },
@@ -83,9 +74,9 @@ function App() {
       <div className="min-h-screen flex flex-col">
         <ScrollToTop />
         <Navbar />
-        
+
         <main className="flex-grow">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
               initial="initial"
@@ -100,15 +91,24 @@ function App() {
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route 
-                  path="/admin" 
+
+                <Route
+                  path="/admin/*"
                   element={
                     <ProtectedRoute requireAdmin>
                       <AdminDashboard />
                     </ProtectedRoute>
-                  } 
-                />
+                  }
+                >
+                  {/* Nested admin routes */}
+                  <Route index element={<Navigate to="overview" replace />} />
+                  <Route path="overview" element={<AdminDashboard />} />
+                  <Route path="products" element={<ProductManagement />} />
+                  {/* Add other admin routes like stock, orders, etc. */}
+                </Route>
+
                 <Route path="/admin/invite" element={<AdminInvite />} />
+                {/* Add any other routes or fallback routes */}
               </Routes>
             </motion.div>
           </AnimatePresence>

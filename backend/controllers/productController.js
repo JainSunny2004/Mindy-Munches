@@ -48,7 +48,7 @@ const getAllProducts = async (req, res) => {
       .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit))
-      .populate('ratings.reviews.user', 'name'); // ← Fixed: ratings.reviews.user instead of reviews.user
+      .populate('ratings.reviews.user', 'name');
 
     // Get total count for pagination
     const total = await Product.countDocuments(filter);
@@ -169,7 +169,7 @@ const searchProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('ratings.reviews.user', 'name'); // ← Fixed: correct populate path
+      .populate('ratings.reviews.user', 'name');
 
     if (!product) {
       return res.status(404).json({
@@ -197,6 +197,9 @@ const getProductById = async (req, res) => {
 // Create new product (Admin only)
 const createProduct = async (req, res) => {
   try {
+    console.log('Create product request received:', req.body);
+    console.log('User role:', req.user?.role);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -208,6 +211,8 @@ const createProduct = async (req, res) => {
 
     const product = new Product(req.body);
     await product.save();
+
+    console.log('Product created successfully:', product._id);
 
     res.status(201).json({
       success: true,
@@ -396,7 +401,7 @@ const addReview = async (req, res) => {
 const getProductReviews = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('ratings.reviews.user', 'name') // ← Fixed: correct populate path
+      .populate('ratings.reviews.user', 'name')
       .select('ratings');
 
     if (!product) {

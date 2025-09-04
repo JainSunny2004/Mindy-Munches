@@ -26,45 +26,53 @@ const ProductCard = ({
 
   // Helper function to resolve image URLs
   const resolveImageUrl = (imagePath) => {
-    if (!imagePath) return '';
-    
+    if (!imagePath) return "";
+
     // External URLs (start with http)
-    if (imagePath.startsWith('http')) {
+    if (imagePath.startsWith("http")) {
       return imagePath;
     }
-    
+
     // Local images - ensure they start with /
-    if (!imagePath.startsWith('/')) {
+    if (!imagePath.startsWith("/")) {
       return `/${imagePath}`;
     }
-    
+
     return imagePath;
   };
 
   // Get all valid images
   const productImages = useMemo(() => {
     // Priority: images array > single image > empty array
-    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    if (
+      product.images &&
+      Array.isArray(product.images) &&
+      product.images.length > 0
+    ) {
       // Filter and resolve image paths
       return product.images
-        .filter(img => img && img.trim() !== '')
-        .map(img => resolveImageUrl(img));
-    } else if (product.image && typeof product.image === 'string' && product.image.trim() !== '') {
+        .filter((img) => img && img.trim() !== "")
+        .map((img) => resolveImageUrl(img));
+    } else if (
+      product.image &&
+      typeof product.image === "string" &&
+      product.image.trim() !== ""
+    ) {
       return [resolveImageUrl(product.image)];
     }
-    
+
     return [];
   }, [product]);
 
   // Get display image - show second image on hover if available, otherwise first
   const displayImage = useMemo(() => {
     if (productImages.length === 0) return null;
-    
+
     // If hovering and multiple images exist, show second image
     if (isHovered && productImages.length > 1) {
       return productImages[1];
     }
-    
+
     // Default to first image
     return productImages[0];
   }, [productImages, isHovered]);
@@ -117,17 +125,17 @@ const ProductCard = ({
 
   return (
     <motion.div
-      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-1000 overflow-hidden group cursor-pointer border border-gray-100 max-w-sm mx-auto"
-      initial={{ opacity: 0, y: 80 }}
+      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer border border-gray-100 max-w-sm mx-auto"
+      initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
-        duration: 1.5, 
-        delay: index * 0.3,
-        ease: [0.25, 0.46, 0.45, 0.94]
+      transition={{
+        duration: 0.4,
+        delay: index * 0.1,
+        ease: [0.25, 0.46, 0.45, 0.94],
       }}
-      whileHover={{ 
-        y: -12,
-        transition: { duration: 1.0, ease: [0.25, 0.46, 0.45, 0.94] }
+      whileHover={{
+        y: -6,
+        transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
       }}
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -140,53 +148,63 @@ const ProductCard = ({
             <motion.img
               key={displayImage}
               src={displayImage}
-              alt={`${product.name}${isHovered && productImages.length > 1 ? ' - Hover view' : ''}`}
+              alt={`${product.name}${
+                isHovered && productImages.length > 1 ? " - Hover view" : ""
+              }`}
               className="w-full h-full object-cover"
-              initial={{ 
-                opacity: 0, 
-                scale: 1.3, 
-                filter: "blur(8px)",
-                y: 50
+              initial={{
+                opacity: 0,
+                scale: 1.05,
+                filter: "blur(2px)",
               }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1, 
+              animate={{
+                opacity: 1,
+                scale: 1,
                 filter: "blur(0px)",
-                y: 0
               }}
-              exit={{ 
-                opacity: 0, 
-                scale: 0.8, 
-                filter: "blur(8px)",
-                y: -50
+              exit={{
+                opacity: 0,
+                scale: 0.95,
+                filter: "blur(2px)",
               }}
-              transition={{ 
-                duration: 1.8, 
+              transition={{
+                duration: 0.2,
                 ease: [0.25, 0.46, 0.45, 0.94],
-                scale: { duration: 2.2 },
-                filter: { duration: 1.0 },
-                y: { duration: 1.2 }
               }}
               whileHover={{
-                scale: 1.12,
-                transition: { duration: 2.0, ease: [0.25, 0.46, 0.45, 0.94] }
+                scale: 1.08,
+                transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
               }}
               onError={(e) => {
-                console.error('Product card image failed to load:', e.target.src);
-                e.target.src = 'https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=No+Image';
+                console.error(
+                  "Product card image failed to load:",
+                  e.target.src
+                );
+                e.target.src =
+                  "https://via.placeholder.com/300x300/f3f4f6/9ca3af?text=No+Image";
               }}
             />
           ) : (
             // Fallback when no image is available
-            <motion.div 
+            <motion.div
               className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"
-              initial={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+              transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
               <div className="text-center text-neutral-400">
-                <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  className="w-12 h-12 mx-auto mb-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
                 <p className="text-xs">No image</p>
               </div>
@@ -194,27 +212,27 @@ const ProductCard = ({
           )}
         </AnimatePresence>
 
-        {/* Best Seller Badge with Smooth Animation */}
+        {/* Best Seller Badge with Faster Animation */}
         {bestseller && showBestsellerBadge && (
-          <motion.div 
+          <motion.div
             className="absolute top-3 left-3 bg-green-600 text-white text-xs px-3 py-1 rounded-full font-medium flex items-center gap-1 z-10 backdrop-blur-sm"
-            initial={{ opacity: 0, x: -50, rotate: -20 }}
+            initial={{ opacity: 0, x: -20, rotate: -10 }}
             animate={{ opacity: 1, x: 0, rotate: 0 }}
-            transition={{ 
-              delay: 1.0, 
-              duration: 1.2,
-              ease: [0.25, 0.46, 0.45, 0.94]
+            transition={{
+              delay: 0.2,
+              duration: 0.4,
+              ease: [0.25, 0.46, 0.45, 0.94],
             }}
           >
             <span>{bestseller.badge}</span>
-            <motion.svg 
-              className="w-3 h-3" 
-              fill="currentColor" 
+            <motion.svg
+              className="w-3 h-3"
+              fill="currentColor"
               viewBox="0 0 20 20"
-              whileHover={{ 
-                scale: 1.5, 
-                rotate: 10,
-                transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }
+              whileHover={{
+                scale: 1.3,
+                rotate: 5,
+                transition: { duration: 0.2 },
               }}
             >
               <path
@@ -226,60 +244,62 @@ const ProductCard = ({
           </motion.div>
         )}
 
-        {/* Featured Badge with Smooth Animation */}
+        {/* Featured Badge with Faster Animation */}
         {product.featured && !showBestsellerBadge && (
-          <motion.div 
+          <motion.div
             className="absolute top-3 left-3 bg-primary-500 text-white text-xs px-3 py-1 rounded-full font-medium z-10 backdrop-blur-sm"
-            initial={{ opacity: 0, x: -50, rotate: -20 }}
+            initial={{ opacity: 0, x: -20, rotate: -10 }}
             animate={{ opacity: 1, x: 0, rotate: 0 }}
-            transition={{ 
-              delay: 1.0, 
-              duration: 1.2,
-              ease: [0.25, 0.46, 0.45, 0.94]
+            transition={{
+              delay: 0.2,
+              duration: 0.4,
+              ease: [0.25, 0.46, 0.45, 0.94],
             }}
           >
             Featured
           </motion.div>
         )}
 
-        {/* Stock Badge with Smooth Animation */}
+        {/* Stock Badge with Faster Animation */}
         {product.stock <= 5 && (
-          <motion.div 
+          <motion.div
             className={`absolute top-3 left-3 bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium z-10 backdrop-blur-sm ${
-              (bestseller && showBestsellerBadge) || product.featured ? 'mt-8' : ''
+              (bestseller && showBestsellerBadge) || product.featured
+                ? "mt-8"
+                : ""
             }`}
-            initial={{ opacity: 0, x: -50, rotate: -20 }}
+            initial={{ opacity: 0, x: -20, rotate: -10 }}
             animate={{ opacity: 1, x: 0, rotate: 0 }}
-            transition={{ 
-              delay: 1.2, 
-              duration: 1.2,
-              ease: [0.25, 0.46, 0.45, 0.94]
+            transition={{
+              delay: 0.3,
+              duration: 0.4,
+              ease: [0.25, 0.46, 0.45, 0.94],
             }}
           >
             Low Stock
           </motion.div>
         )}
 
-        {/* Wishlist Heart Icon with Smooth Hover Animation */}
-        <motion.div 
+        {/* Wishlist Heart Icon with Faster Animation */}
+        <motion.div
           className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center cursor-pointer z-10 backdrop-blur-sm"
           onClick={(e) => e.stopPropagation()}
-          whileHover={{ 
-            scale: 1.3, 
+          whileHover={{
+            scale: 1.2,
             backgroundColor: "#fef2f2",
-            rotate: 10,
-            transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }
+            rotate: 5,
+            transition: { duration: 0.2 },
           }}
-          whileTap={{ 
-            scale: 0.8,
-            transition: { duration: 0.2 }
+          whileTap={{
+            scale: 0.9,
+            transition: { duration: 0.1 },
           }}
-          initial={{ opacity: 0, x: 50, rotate: 20 }}
+          initial={{ opacity: 0, x: 20, rotate: 10 }}
           animate={{ opacity: 1, x: 0, rotate: 0 }}
-          transition={{ 
-            delay: 1.1, 
-            duration: 1.2,
-            ease: [0.25, 0.46, 0.45, 0.94]
+          transition={{
+            delay: 0.25,
+            duration: 0.4,
+            ease: [0.25, 0.46, 0.45, 0.94],
           }}
         >
           <motion.svg
@@ -287,10 +307,10 @@ const ProductCard = ({
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            whileHover={{ 
+            whileHover={{
               color: "#ef4444",
-              scale: 1.2,
-              transition: { duration: 0.6 }
+              scale: 1.1,
+              transition: { duration: 0.2 },
             }}
           >
             <path
@@ -304,35 +324,35 @@ const ProductCard = ({
       </div>
 
       {/* Product Details */}
-      <motion.div 
+      <motion.div
         className="p-4"
-        initial={{ opacity: 0, y: 50 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ 
-          delay: 0.6, 
-          duration: 1.4,
-          ease: [0.25, 0.46, 0.45, 0.94]
+        transition={{
+          delay: 0.15,
+          duration: 0.4,
+          ease: [0.25, 0.46, 0.45, 0.94],
         }}
       >
         {/* Product Name and Price on Same Line */}
         <div className="flex justify-between items-center mb-2">
-          <motion.h3 
-            className="font-semibold text-gray-800 text-base leading-tight group-hover:text-primary-600 transition-colors duration-1000 truncate flex-1 mr-2"
-            whileHover={{ 
-              scale: 1.04,
-              transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }
+          <motion.h3
+            className="font-semibold text-gray-800 text-base leading-tight group-hover:text-primary-600 transition-colors duration-300 truncate flex-1 mr-2"
+            whileHover={{
+              scale: 1.02,
+              transition: { duration: 0.2 },
             }}
           >
             {product.name}
           </motion.h3>
-          <motion.span 
+          <motion.span
             className="font-semibold text-primary-600 text-base leading-tight whitespace-nowrap"
             key={selectedSize}
-            initial={{ opacity: 0, x: 30, scale: 0.6 }}
+            initial={{ opacity: 0, x: 10, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ 
-              duration: 1.0,
-              ease: [0.25, 0.46, 0.45, 0.94]
+            transition={{
+              duration: 0.3,
+              ease: [0.25, 0.46, 0.45, 0.94],
             }}
           >
             {formatPrice(priceMap[selectedSize])}
@@ -340,32 +360,32 @@ const ProductCard = ({
         </div>
 
         {/* Rating and Reviews */}
-        <motion.div 
+        <motion.div
           className="flex items-center gap-2 mb-3"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            delay: 1.0, 
-            duration: 1.2,
-            ease: [0.25, 0.46, 0.45, 0.94]
+          transition={{
+            delay: 0.25,
+            duration: 0.3,
+            ease: [0.25, 0.46, 0.45, 0.94],
           }}
         >
           <div className="flex text-yellow-400">
             {[...Array(5)].map((_, i) => (
-              <motion.span 
-                key={i} 
+              <motion.span
+                key={i}
                 className="text-sm"
-                initial={{ opacity: 0, rotate: -25, scale: 0.3 }}
+                initial={{ opacity: 0, rotate: -10, scale: 0.5 }}
                 animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                transition={{ 
-                  delay: 1.1 + i * 0.2, 
-                  duration: 0.8,
-                  ease: [0.25, 0.46, 0.45, 0.94]
+                transition={{
+                  delay: 0.3 + i * 0.05,
+                  duration: 0.2,
+                  ease: [0.25, 0.46, 0.45, 0.94],
                 }}
                 whileHover={{
-                  scale: 1.5,
-                  rotate: 20,
-                  transition: { duration: 0.6 }
+                  scale: 1.3,
+                  rotate: 10,
+                  transition: { duration: 0.2 },
                 }}
               >
                 ⭐
@@ -379,14 +399,14 @@ const ProductCard = ({
         </motion.div>
 
         {/* Stock Status */}
-        <motion.div 
+        <motion.div
           className="flex items-center gap-2 mb-3"
-          initial={{ opacity: 0, x: -30 }}
+          initial={{ opacity: 0, x: -15 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ 
-            delay: 1.3, 
-            duration: 1.2,
-            ease: [0.25, 0.46, 0.45, 0.94]
+          transition={{
+            delay: 0.35,
+            duration: 0.3,
+            ease: [0.25, 0.46, 0.45, 0.94],
           }}
         >
           <motion.div
@@ -397,14 +417,14 @@ const ProductCard = ({
                 ? "bg-yellow-500"
                 : "bg-red-500"
             }`}
-            animate={{ 
-              scale: [1, 1.6, 1],
-              opacity: [0.4, 1, 0.4]
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.6, 1, 0.6],
             }}
-            transition={{ 
-              duration: 5,
+            transition={{
+              duration: 2,
               repeat: Infinity,
-              ease: "easeInOut"
+              ease: "easeInOut",
             }}
           ></motion.div>
           <span className="text-xs text-gray-600">
@@ -417,14 +437,14 @@ const ProductCard = ({
         </motion.div>
 
         {/* Size Selector */}
-        <motion.div 
+        <motion.div
           className="mb-4"
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            delay: 1.4, 
-            duration: 1.2,
-            ease: [0.25, 0.46, 0.45, 0.94]
+          transition={{
+            delay: 0.4,
+            duration: 0.3,
+            ease: [0.25, 0.46, 0.45, 0.94],
           }}
         >
           <motion.select
@@ -433,11 +453,11 @@ const ProductCard = ({
               e.stopPropagation();
               setSelectedSize(e.target.value);
             }}
-            className="w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-600"
+            className="w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
             onClick={(e) => e.stopPropagation()}
-            whileFocus={{ 
-              scale: 1.04,
-              transition: { duration: 0.6 }
+            whileFocus={{
+              scale: 1.02,
+              transition: { duration: 0.2 },
             }}
           >
             <option value="500gm">500gm</option>
@@ -452,28 +472,36 @@ const ProductCard = ({
             handleAddToCart(e);
           }}
           disabled={product.stock === 0}
-          className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-600 text-sm uppercase tracking-wide ${
+          className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-200 text-sm uppercase tracking-wide ${
             product.stock === 0
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : "bg-green-600 hover:bg-green-700 text-white"
           }`}
-          whileHover={product.stock > 0 ? { 
-            scale: 1.05, 
-            y: -8,
-            boxShadow: "0 20px 50px rgba(34, 197, 94, 0.5)",
-            transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }
-          } : {}}
-          whileTap={product.stock > 0 ? { 
-            scale: 0.95,
-            y: 0,
-            transition: { duration: 0.2 }
-          } : {}}
-          initial={{ opacity: 0, y: 40, scale: 0.8 }}
+          whileHover={
+            product.stock > 0
+              ? {
+                  scale: 1.03,
+                  y: -3,
+                  boxShadow: "0 10px 25px rgba(34, 197, 94, 0.3)",
+                  transition: { duration: 0.2 },
+                }
+              : {}
+          }
+          whileTap={
+            product.stock > 0
+              ? {
+                  scale: 0.97,
+                  y: 0,
+                  transition: { duration: 0.1 },
+                }
+              : {}
+          }
+          initial={{ opacity: 0, y: 20, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ 
-            delay: 1.5, 
-            duration: 1.4,
-            ease: [0.25, 0.46, 0.45, 0.94]
+          transition={{
+            delay: 0.45,
+            duration: 0.4,
+            ease: [0.25, 0.46, 0.45, 0.94],
           }}
         >
           {product.stock === 0 ? "OUT OF STOCK" : "ADD TO CART"}

@@ -14,6 +14,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeVideo, setActiveVideo] = useState(null);
+  const [direction, setDirection] = useState(0); // 1 for next, -1 for previous
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Use the custom hook to get video testimonials
   const { testimonials: videoTestimonials, loading: videoLoading } =
@@ -33,15 +35,12 @@ const Home = () => {
       src: "/BANNER_2.png",
       alt: "Organic Sattu ingredients",
     },
-    {
-      src: "https://images.unsplash.com/photo-1619613521014-d0d263855bbf?w=1200&h=600&fit=crop",
-      alt: "Traditional food artisans at work",
-    },
   ];
 
-  // Auto-rotate images every 5 seconds
+  // Auto-rotate images every 5 seconds with direction tracking
   useEffect(() => {
     const interval = setInterval(() => {
+      setDirection(1); // Auto-rotation always goes forward
       setCurrentImageIndex((prevIndex) =>
         prevIndex === heroImages.length - 1 ? 0 : prevIndex + 1
       );
@@ -50,15 +49,25 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  // Navigation functions
+  // Enhanced navigation functions with direction tracking and transition protection
   const goToPrevious = () => {
+    if (isTransitioning) return; // Prevent rapid clicks
+    setIsTransitioning(true);
+    setDirection(-1);
     setCurrentImageIndex(
       currentImageIndex === 0 ? heroImages.length - 1 : currentImageIndex - 1
     );
+    setTimeout(() => setIsTransitioning(false), 800); // Match animation duration
   };
 
   const goToNext = () => {
-    setCurrentImageIndex(currentImageIndex === 1 ? 0 : currentImageIndex + 1);
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setDirection(1);
+    setCurrentImageIndex(
+      currentImageIndex === heroImages.length - 1 ? 0 : currentImageIndex + 1
+    );
+    setTimeout(() => setIsTransitioning(false), 800);
   };
 
   useEffect(() => {
@@ -158,35 +167,82 @@ const Home = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden max-w-full">
-      {/* HERO BANNER SECTION - Full width coverage with content preservation */}
+      {/* HERO BANNER SECTION - Absolutely no cropping with smooth circular animations */}
       <section
-        className="relative w-screen  overflow-hidden"
-        style={{ height: "110vh" }}
+        className="relative w-screen overflow-hidden"
+        style={{
+          height: "auto",
+          minHeight: "400px",
+          width: "100vw",
+        }}
       >
-        {/* Background Images - Full width with smart object positioning */}
-        <div className="w-screen h-full relative overflow-hidden">
+        {/* Background Images - Aspect ratio preserved with smooth directional transitions */}
+        <div
+          className="w-screen relative overflow-hidden"
+          style={{
+            aspectRatio: "16/9", // Force 1920x1080 aspect ratio
+            width: "100%",
+            maxWidth: "100vw",
+          }}
+        >
           <AnimatePresence mode="wait">
             <motion.img
               key={currentImageIndex}
               src={heroImages[currentImageIndex].src}
               alt={heroImages[currentImageIndex].alt}
-              className="w-full h-full object-cover object-center"
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.8 }}
+              className="w-full h-full"
+              style={{
+                objectFit: "contain", // This prevents ALL cropping
+                objectPosition: "center",
+                width: "100%",
+                height: "100%",
+                maxWidth: "100%",
+                backgroundColor: "#f8f9fa", // Optional background color for letterboxing
+              }}
+              initial={{
+                opacity: 0,
+                scale: 1.08,
+                x: direction > 0 ? 300 : direction < 0 ? -300 : 100, // Directional entry
+                filter: "blur(4px)",
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                x: 0,
+                filter: "blur(0px)",
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.92,
+                x: direction > 0 ? -300 : direction < 0 ? 300 : -100, // Directional exit
+                filter: "blur(4px)",
+              }}
+              transition={{
+                duration: 1.2,
+                ease: [0.25, 0.46, 0.45, 0.94], // Custom cubic bezier for smooth easing
+                opacity: { duration: 0.6 },
+                scale: { duration: 1.2, ease: "easeInOut" },
+                x: { duration: 0.8, ease: "easeOut" },
+                filter: { duration: 0.4 },
+              }}
+              // Add image preloading for smoother transitions
+              loading="eager"
+              onLoad={() => {
+                // Optional: Add any loading completion logic here
+              }}
             />
           </AnimatePresence>
         </div>
 
-        {/* Navigation Arrows */}
+        {/* Navigation Arrows - Enhanced with smooth hover animations */}
         <button
           onClick={goToPrevious}
-          className="absolute left-2 md:left-4 lg:left-6 top-1/2 transform -translate-y-1/2 z-30 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 group"
+          disabled={isTransitioning}
+          className="absolute left-2 sm:left-4 md:left-6 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Previous image"
         >
           <svg
-            className="w-6 h-6 group-hover:scale-110 transition-transform"
+            className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-125 group-hover:-translate-x-0.5 transition-all duration-300 ease-out"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -202,11 +258,12 @@ const Home = () => {
 
         <button
           onClick={goToNext}
-          className="absolute right-2 md:right-4 lg:right-6 top-1/2 transform -translate-y-1/2 z-30 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 group"
+          disabled={isTransitioning}
+          className="absolute right-2 sm:right-4 md:right-6 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Next image"
         >
           <svg
-            className="w-6 h-6 group-hover:scale-110 transition-transform"
+            className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-125 group-hover:translate-x-0.5 transition-all duration-300 ease-out"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -220,23 +277,27 @@ const Home = () => {
           </svg>
         </button>
 
-        {/* Shop Now Button - Bottom Right Position */}
-        <div className="absolute bottom-16 md:bottom-20 right-4 md:right-8 lg:right-12 z-30">
+        {/* Shop Now Button - Enhanced entrance animation */}
+        <div className="absolute bottom-8 sm:bottom-12 md:bottom-16 right-3 sm:right-6 md:right-8 lg:right-12 z-30">
           <motion.div
-            initial={{ opacity: 0, x: 50, y: 50 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
+            initial={{ opacity: 0, x: 60, y: 60, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            transition={{
+              duration: 1,
+              delay: 0.8,
+              ease: [0.25, 0.46, 0.45, 0.94],
+              scale: { duration: 0.6, ease: "backOut" },
+            }}
           >
             <Link
               to="/products"
               className="group relative inline-flex items-center justify-center"
             >
-              {/* Main Button */}
-              <div className="relative bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold text-base md:text-lg px-6 md:px-8 py-3 md:py-4 rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl hover:shadow-primary-500/25 border border-primary-400/20">
+              <div className="relative bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-2xl transition-all duration-400 hover:scale-105 shadow-2xl hover:shadow-primary-500/25 border border-primary-400/20">
                 <span className="relative z-10 flex items-center gap-2 md:gap-3 whitespace-nowrap">
                   Shop Now
                   <svg
-                    className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform duration-300"
+                    className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform duration-400 ease-out"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -249,27 +310,41 @@ const Home = () => {
                     />
                   </svg>
                 </span>
-
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-400 to-primary-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-400 to-primary-500 opacity-0 group-hover:opacity-100 transition-opacity duration-400"></div>
               </div>
-
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-400 to-primary-600 blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300 scale-110"></div>
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-400 to-primary-600 blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-400 scale-110"></div>
             </Link>
           </motion.div>
         </div>
 
-        {/* Navigation Dots */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3 z-30">
+        {/* Navigation Dots - Smoother interactions with active state animation */}
+        <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 sm:space-x-3 z-30">
           {heroImages.map((_, index) => (
-            <button
+            <motion.button
               key={index}
-              onClick={() => setCurrentImageIndex(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              onClick={() => {
+                if (!isTransitioning) {
+                  setDirection(index > currentImageIndex ? 1 : -1);
+                  setCurrentImageIndex(index);
+                }
+              }}
+              disabled={isTransitioning}
+              className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-400 ease-out disabled:cursor-not-allowed ${
                 index === currentImageIndex
-                  ? "bg-white shadow-lg scale-125"
+                  ? "bg-white shadow-lg"
                   : "bg-white/50 hover:bg-white/75"
               }`}
               aria-label={`Go to slide ${index + 1}`}
+              animate={{
+                scale: index === currentImageIndex ? 1.25 : 1,
+                opacity: index === currentImageIndex ? 1 : 0.7,
+              }}
+              whileHover={{ scale: isTransitioning ? 1 : 1.1, opacity: 1 }}
+              whileTap={{ scale: isTransitioning ? 1 : 0.9 }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+              }}
             />
           ))}
         </div>
@@ -304,21 +379,21 @@ const Home = () => {
               </p>
 
               {/* Certifications: single line, no wrap, no x-scroll */}
-              <div className="flex flex-nowrap items-center gap-2 md:gap-3 mb-8 px-0 overflow-x-clip">
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-start gap-2 sm:gap-3 md:gap-3 mb-8 px-2 sm:px-0 overflow-x-visible sm:overflow-x-clip">
                 {["100% Natural", "Traditional Methods", "Artisan Made"].map(
                   (cert, index) => (
                     <motion.div
                       key={cert}
-                      className="bg-white/80 backdrop-blur-sm px-4 py-2 md:px-5 md:py-2.5 rounded-lg shadow-sm flex items-center gap-2 flex-none whitespace-nowrap"
+                      className="bg-white/80 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-lg shadow-sm flex items-center gap-1 sm:gap-2 flex-none whitespace-nowrap"
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: index * 0.1 }}
                       viewport={{ once: true }}
                     >
-                      <span className="text-green-500 text-lg leading-none">
+                      <span className="text-green-500 text-base sm:text-lg leading-none">
                         ✓
                       </span>
-                      <span className="text-sm md:text-base font-medium text-neutral-700 leading-none">
+                      <span className="text-xs sm:text-sm md:text-base font-medium text-neutral-700 leading-none">
                         {cert}
                       </span>
                     </motion.div>
@@ -336,8 +411,8 @@ const Home = () => {
               >
                 <div className="bg-white/60 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-lg border border-white/20">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-center">
-                    <div className="text-left">
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4">
+                    <div className="text-center md:text-left">
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto md:mx-0">
                         <span className="text-2xl md:text-3xl">🌾</span>
                       </div>
                       <h3 className="font-semibold text-neutral-800 mb-2 text-sm md:text-base">
@@ -348,8 +423,8 @@ const Home = () => {
                       </p>
                     </div>
 
-                    <div className="text-left">
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4">
+                    <div className="text-center md:text-left">
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto md:mx-0">
                         <span className="text-2xl md:text-3xl">💪</span>
                       </div>
                       <h3 className="font-semibold text-neutral-800 mb-2 text-sm md:text-base">
@@ -360,8 +435,8 @@ const Home = () => {
                       </p>
                     </div>
 
-                    <div className="text-left">
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4">
+                    <div className="text-center md:text-left">
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto md:mx-0">
                         <span className="text-2xl md:text-3xl">❤️</span>
                       </div>
                       <h3 className="font-semibold text-neutral-800 mb-2 text-sm md:text-base">
@@ -571,6 +646,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+
       {/* All Products Section */}
       <section className="py-16 px-2 md:py-20 bg-neutral-50 overflow-hidden">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -824,10 +900,17 @@ const Home = () => {
           )}
 
           {/* Text Reviews Badge */}
-
-          {/* Text Testimonials - Square Cards with INCREASED HEIGHT */}
-          <div className="relative min-h-[500px]">
-            {/* Left Arrow for Text Testimonials */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-sm">
+              <span className="text-2xl mr-3">📝</span>
+              <span className="text-lg font-semibold text-neutral-700">
+                Customer Reviews
+              </span>
+            </div>
+          </div>
+          {/* Text Testimonials - Responsive with Hidden Mobile Arrows */}
+          <div className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] mb-5">
+            {/* Left Arrow - Hidden on Mobile, Visible on Tablet+ */}
             <button
               onClick={() =>
                 scrollRef.current?.scrollBy({
@@ -835,7 +918,7 @@ const Home = () => {
                   behavior: "smooth",
                 })
               }
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-50 rounded-full shadow-lg p-3 transition-all duration-200 hover:scale-105"
+              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-50 rounded-full shadow-lg p-3 transition-all duration-200 hover:scale-105 items-center justify-center"
               aria-label="Scroll testimonials left"
             >
               <svg
@@ -853,25 +936,25 @@ const Home = () => {
               </svg>
             </button>
 
-            {/* Text Testimonials Container - INCREASED PADDING AND HEIGHT */}
+            {/* Text Testimonials Container - Optimized for Touch Scrolling */}
             <div
               ref={scrollRef}
-              className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-2"
+              className="flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-hide px-4 sm:px-6 md:px-12 py-2"
               style={{
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
                 scrollBehavior: "smooth",
                 scrollSnapType: "x mandatory",
-                WebkitOverflowScrolling: "touch",
+                WebkitOverflowScrolling: "touch", // Enhanced touch scrolling for mobile
               }}
             >
               {testimonials.map((testimonial, index) => (
                 <div
                   key={testimonial.id}
-                  className="flex-shrink-0 w-72 h-80 md:w-80 md:h-96 lg:w-96 lg:h-96"
+                  className="flex-shrink-0 w-[85vw] h-auto min-h-[280px] sm:w-[70vw] sm:min-h-[320px] md:w-80 md:h-96 lg:w-96 lg:h-96 max-w-sm"
                   style={{ scrollSnapAlign: "start" }}
                 >
-                  <div className="w-full h-full bg-white rounded-2xl shadow-lg p-8 flex flex-col justify-between transition-transform duration-300 hover:scale-105">
+                  <div className="w-full h-full bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 flex flex-col justify-between transition-transform duration-300 hover:scale-105">
                     <TestimonialCard
                       testimonial={testimonial}
                       index={index}
@@ -882,7 +965,7 @@ const Home = () => {
               ))}
             </div>
 
-            {/* Right Arrow for Text Testimonials */}
+            {/* Right Arrow - Hidden on Mobile, Visible on Tablet+ */}
             <button
               onClick={() =>
                 scrollRef.current?.scrollBy({
@@ -890,7 +973,7 @@ const Home = () => {
                   behavior: "smooth",
                 })
               }
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-50 rounded-full shadow-lg p-3 transition-all duration-200 hover:scale-105"
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-50 rounded-full shadow-lg p-3 transition-all duration-200 hover:scale-105 items-center justify-center"
               aria-label="Scroll testimonials right"
             >
               <svg
@@ -907,6 +990,23 @@ const Home = () => {
                 />
               </svg>
             </button>
+
+            {/* Mobile Touch Indicator - Optional visual cue for swipe */}
+            <div className="md:hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-gray-500 text-xs">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M7 16l4-4-4-4m6 8l4-4-4-4"
+                />
+              </svg>
+            </div>
           </div>
 
           {/* Video Modal */}

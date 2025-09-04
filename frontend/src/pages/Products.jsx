@@ -204,76 +204,7 @@ const Products = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl font-heading font-bold text-neutral-800 mb-4">
-              Shop by Category
-            </h2>
-            <p className="text-lg text-neutral-600">
-              Explore our carefully curated selection of traditional superfoods
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <motion.div 
-              className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-8 text-center group cursor-pointer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              onClick={() => {
-                setSelectedCategory('Makhana')
-                setShowFilters(false)
-              }}
-            >
-              <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-white text-3xl">🌾</span>
-              </div>
-              <h3 className="text-xl font-semibold text-neutral-800 mb-2">Makhana</h3>
-              <p className="text-neutral-600 mb-4">
-                Protein-rich fox nuts, perfect for guilt-free snacking. Low glycemic index and completely additive-free.
-              </p>
-              <span className="text-primary-600 font-medium group-hover:text-primary-700">
-                View Makhana Products →
-              </span>
-            </motion.div>
-
-            <motion.div 
-              className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-8 text-center group cursor-pointer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              onClick={() => {
-                setSelectedCategory('Sattu')
-                setShowFilters(false)
-              }}
-            >
-              <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-white text-3xl">💪</span>
-              </div>
-              <h3 className="text-xl font-semibold text-neutral-800 mb-2">Sattu</h3>
-              <p className="text-neutral-600 mb-4">
-                Plant protein powerhouse packed with fiber and minerals. Versatile ingredient for modern kitchens.
-              </p>
-              <span className="text-primary-600 font-medium group-hover:text-primary-700">
-                View Sattu Products →
-              </span>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
+      
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-primary-500 to-primary-600">
         <div className="container mx-auto px-4">

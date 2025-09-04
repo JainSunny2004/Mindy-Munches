@@ -7,9 +7,8 @@
       "category": "Makhana",
       "description": "Rich in protein, low on the glycemic index, and free from additives. Our DIY packs empower families to season it their way—mild, spicy, bold—while consciously controlling fat and flavor.",
       "images": [
-        "/Sweet-makhana.png",
-        "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&h=400&fit=crop&crop=center",
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop&crop=center"
+        "/tomato-main.png",
+        "/tomato.png"
       ],
       "stock": 50,
       "featured": true
@@ -21,8 +20,8 @@
       "category": "Makhana",
       "description": "A refreshing twist on traditional fox nuts with aromatic mint and spices. Perfect for health-conscious snacking.",
       "images": [
-        "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&h=400&fit=crop&crop=center",
-        "https://images.unsplash.com/photo-1599785209747-22d2b5c9d6de?w=400&h=400&fit=crop&crop=center"
+        "/minty-masala.png",
+        "/minty.png"
       ],
       "stock": 30,
       "featured": true
@@ -72,7 +71,9 @@
       "category": "Makhana",
       "description": "Spicy peri peri flavored fox nuts for those who love a kick in their healthy snacks. Guilt-free crunch without compromise.",
       "images": [
-        "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&h=400&fit=crop&crop=center"
+        "/PERI-PERI-makhana.png",
+        "/peri.png"
+        
       ],
       "stock": 20,
       "featured": false

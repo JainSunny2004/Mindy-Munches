@@ -69,48 +69,51 @@ const Footer = () => {
       style={{ color: "#1C1E19" }}
     >
       {/* Background Image Container - Bottom Half Only */}
-      <div className="absolute bottom-0 left-0 w-full h-2/3 z-0">
+      <div className="absolute bottom-0 left-0 w-full h-1/2 sm:h-2/3 z-0">
         <img
-          src="/footer-bg.png" // Replace with your image path
+          src="/footer-bg.png"
           alt="Traditional Indian farm landscape"
           className="w-full h-full object-cover object-center"
         />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-20 ">
-        {/* Top Section: Logo + Newsletter + Location in a single row */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+        {/* Top Section: Logo + Newsletter + Location - Responsive Layout */}
         <motion.div
-          className="flex justify-between items-start gap-16 w-full"
+          className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-8 sm:gap-12 lg:gap-16 w-full mb-12 sm:mb-16 lg:mb-20"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
           {/* Left: Logo + Social Media */}
-          <div className="flex flex-col gap-12">
+          <div className="flex flex-col items-center lg:items-start gap-6 sm:gap-8 lg:gap-12">
             {/* Logo */}
             <Link to="/" className="flex items-center justify-center space-x-3">
-              <div className="w-35 h-35 rounded-lg flex items-center justify-center">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-35 lg:h-35 rounded-lg flex items-center justify-center">
                 <img
                   src="/Mindy Munchs_Logo-01.png"
                   alt="Mindy Munchs Logo"
-                  className="mx-auto"
+                  className="w-full h-full object-contain"
                 />
               </div>
             </Link>
 
             {/* Social Media */}
-            <div className="flex flex-row items-center gap-4">
-              <span className="font-medium" style={{ color: "#1C1E19" }}>
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+              <span 
+                className="font-medium text-sm sm:text-base" 
+                style={{ color: "#1C1E19" }}
+              >
                 Follow us:
               </span>
-              <div className="flex gap-6">
+              <div className="flex gap-3 sm:gap-6">
                 {socialLinks.map((social) => (
                   <a
                     key={social.name}
                     href={social.href}
-                    className="w-10 h-10 bg-gray-200 hover:bg-primary-500 rounded-full flex items-center justify-center hover:text-white hover:scale-110 transition-all duration-200"
+                    className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 hover:bg-primary-500 rounded-full flex items-center justify-center hover:text-white hover:scale-110 transition-all duration-200"
                     title={social.name}
                     style={{ color: "#1C1E19" }}
                   >
@@ -122,29 +125,28 @@ const Footer = () => {
           </div>
 
           {/* Center: Newsletter Signup */}
-          <div className="text-center flex flex-col items-center gap-10">
+          <div className="text-center flex flex-col items-center gap-6 sm:gap-8 lg:gap-10 px-2">
             <p
-              className="max-w-md text-base leading-relaxed"
+              className="max-w-xs sm:max-w-sm md:max-w-md text-sm sm:text-base leading-relaxed"
               style={{ color: "#1C1E19" }}
             >
               Subscribe for special offers, newsletters and become a part of our
               movement towards traditional Indian superfoods
             </p>
 
-            {/* Newsletter Signup */}
-            <div className="flex rounded-lg overflow-hidden shadow-lg">
+            {/* Newsletter Signup - Fully Responsive */}
+            <div className="flex flex-col sm:flex-row w-full max-w-sm sm:max-w-md lg:max-w-lg rounded-lg overflow-hidden shadow-lg">
               <input
                 type="email"
                 placeholder="Your e-mail"
-                className="px-4 py-3 text-gray-900 placeholder-gray-600 bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                style={{ width: "500px" }}
+                className="px-3 sm:px-4 py-2 sm:py-3 text-gray-900 placeholder-gray-600 bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 w-full sm:flex-1 text-sm sm:text-base"
               />
               <button
                 type="submit"
-                className="px-6 bg-primary-500 hover:bg-primary-600 text-white font-semibold transition-colors duration-200"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold transition-colors duration-200 mt-2 sm:mt-0"
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-4 h-4 sm:w-5 sm:h-5 mx-auto"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -161,26 +163,31 @@ const Footer = () => {
           </div>
 
           {/* Right: Location */}
-          <div className="text-right space-y-4">
-            <p className="font-semibold" style={{ color: "#1C1E19" }}>
+          <div className="text-center lg:text-right space-y-3 sm:space-y-4">
+            <p 
+              className="font-semibold text-sm sm:text-base" 
+              style={{ color: "#1C1E19" }}
+            >
               Mumbai, Maharashtra
             </p>
-            <p style={{ color: "#1C1E19" }}>India</p>
-            <p style={{ color: "#1C1E19" }}>
+            <p className="text-sm sm:text-base" style={{ color: "#1C1E19" }}>
+              India
+            </p>
+            <div className="text-sm sm:text-base" style={{ color: "#1C1E19" }}>
               <span className="font-medium">Email ID: </span>
               <a
                 href="mailto:hello@mindymunchs.com"
-                className="underline hover:text-primary-600 transition-colors duration-200"
+                className="underline hover:text-primary-600 transition-colors duration-200 break-all"
                 style={{ color: "#1C1E19" }}
               >
                 hello@mindymunchs.com
               </a>
-            </p>
+            </div>
           </div>
         </motion.div>
 
-        {/* Dropdown Navigation Links */}
-        <div className="flex flex-wrap justify-center gap-8 lg:gap-12 mb-20">
+        {/* Dropdown Navigation Links - Responsive Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-center gap-6 sm:gap-8 lg:gap-12 mb-12 sm:mb-16 lg:mb-20">
           {Object.entries(footerLinks).map(([section, links], index) => (
             <motion.div
               key={section}
@@ -191,12 +198,12 @@ const Footer = () => {
               viewport={{ once: true }}
             >
               <button
-                className="font-semibold text-lg uppercase tracking-wide cursor-pointer flex items-center gap-1 hover:text-primary-600 transition-colors duration-200"
+                className="font-semibold text-sm sm:text-base lg:text-lg uppercase tracking-wide cursor-pointer flex items-center justify-center lg:justify-start gap-1 hover:text-primary-600 transition-colors duration-200 w-full"
                 style={{ color: "#1C1E19" }}
               >
                 {section}
                 <svg
-                  className="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-200"
+                  className="w-3 h-3 sm:w-4 sm:h-4 transform group-hover:rotate-180 transition-transform duration-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -210,14 +217,14 @@ const Footer = () => {
                 </svg>
               </button>
 
-              {/* Dropdown Menu */}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-20">
+              {/* Dropdown Menu - Responsive Positioning */}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-20">
                 <div className="py-2">
                   {links.map((link) => (
                     <Link
                       key={link.name}
                       to={link.href}
-                      className="block px-4 py-2 text-sm hover:bg-gray-100 transition-colors duration-200"
+                      className="block px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-gray-100 transition-colors duration-200"
                       style={{ color: "#1C1E19" }}
                     >
                       {link.name}
@@ -228,9 +235,6 @@ const Footer = () => {
             </motion.div>
           ))}
         </div>
-
-        {/* Copyright & Certifications */}
-        <div className=" mt-16 pt-12 relative z-20"></div>
       </div>
     </footer>
   );

@@ -294,6 +294,37 @@ const Products = () => {
                   Not sure which products are right? Our team can help find the perfect healthy snacks for your lifestyle.
                 </p>
               </div>
+
+            </motion.div>
+          )}
+        </div>
+      </section>
+
+      
+      {/* CTA Section */}
+      <section className="py-16 bg-gradient-to-r from-primary-500 to-primary-600">
+        <div className="container mx-auto px-4">
+          <motion.div 
+            className="text-center text-white"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl font-heading font-bold mb-4">
+              Need Help Choosing?
+            </h2>
+            <p className="text-primary-100 mb-8 max-w-2xl mx-auto">
+              Not sure which products are right? Our team can help find the perfect healthy snacks for your lifestyle.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/contact" className="bg-white text-primary-600 font-medium px-6 py-3 rounded-lg hover:bg-primary-50 transition-colors">
+                Contact Us
+              </Link>
+              <Link to="/recipes" className="border border-white text-white font-medium px-6 py-3 rounded-lg hover:bg-white hover:text-primary-600 transition-colors">
+                View Recipes
+              </Link>
+
             </div>
           </>
         )}

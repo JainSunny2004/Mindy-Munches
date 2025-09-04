@@ -1,9 +1,10 @@
+/* eslint-disable no-unused-vars */
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import ProductCard from "../components/ProductCard";
 import TestimonialCard from "../components/TestimonialCard";
-import { useVideoTestimonials } from "../components/VideoTestimonials";
+import { useVideoTestimonials } from "../components/VideoTestimonials"; // Import the hook
 import Loader from "../components/Loader";
 
 const Home = () => {
@@ -17,7 +18,8 @@ const Home = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Use the custom hook to get video testimonials
-  const { testimonials: videoTestimonials, loading: videoLoading } = useVideoTestimonials();
+  const { testimonials: videoTestimonials, loading: videoLoading } =
+    useVideoTestimonials();
 
   // scrollRef for testimonial sections
   const scrollRef = useRef(null);
@@ -59,7 +61,6 @@ const Home = () => {
   };
 
   const goToNext = () => {
-
     if (isTransitioning) return;
     setIsTransitioning(true);
     setDirection(1);
@@ -67,7 +68,6 @@ const Home = () => {
       currentImageIndex === heroImages.length - 1 ? 0 : currentImageIndex + 1
     );
     setTimeout(() => setIsTransitioning(false), 800);
-
   };
 
   useEffect(() => {
@@ -75,15 +75,25 @@ const Home = () => {
       try {
         setLoading(true);
 
+        // Helper function to check if we're in Netlify environment
+        const isNetlify = () => {
+          return (
+            window.location.hostname.includes("netlify.app") ||
+            window.location.hostname.includes("netlify.com") ||
+            import.meta.env.VITE_NETLIFY_DEPLOY === "true"
+          );
+        };
+
         let productsResponse, testimonialsResponse;
-        
+
         try {
           // First, try to fetch from API
-          if (import.meta.env.VITE_API_URL) {
-            const [apiProductsResponse, apiTestimonialsResponse] = await Promise.all([
-              fetch(`${import.meta.env.VITE_API_URL}/products`),
-              fetch(`${import.meta.env.VITE_API_URL}/testimonials`),
-            ]);
+          if (import.meta.env.VITE_API_URL && !isNetlify()) {
+            const [apiProductsResponse, apiTestimonialsResponse] =
+              await Promise.all([
+                fetch(`${import.meta.env.VITE_API_URL}/products`),
+                fetch(`${import.meta.env.VITE_API_URL}/testimonials`),
+              ]);
 
             if (apiProductsResponse.ok && apiTestimonialsResponse.ok) {
               productsResponse = apiProductsResponse;
@@ -92,53 +102,41 @@ const Home = () => {
               throw new Error("API responses not ok");
             }
           } else {
-            throw new Error("API not available");
+            throw new Error(
+              "API not available or Netlify environment detected"
+            );
           }
         } catch (apiError) {
-          console.warn("API failed, falling back to local data:", apiError.message);
-          
-          // Fallback to local JSON files in public folder
-          try {
-            const [localProductsResponse, localTestimonialsResponse] = await Promise.all([
-              fetch("/data/products.json"),
-              fetch("/data/testimonials.json"),
-            ]);
+          console.warn(
+            "API failed, falling back to public data:",
+            apiError.message
+          );
 
-            if (localProductsResponse.ok && localTestimonialsResponse.ok) {
-              productsResponse = localProductsResponse;
-              testimonialsResponse = localTestimonialsResponse;
+          // Fallback to public data files
+          try {
+            const [publicProductsResponse, publicTestimonialsResponse] =
+              await Promise.all([
+                fetch("/data/products.json"),
+                fetch("/data/testimonials.json"),
+              ]);
+
+            if (publicProductsResponse.ok && publicTestimonialsResponse.ok) {
+              productsResponse = publicProductsResponse;
+              testimonialsResponse = publicTestimonialsResponse;
             } else {
-              throw new Error("Local data files not found");
+              throw new Error("Public data files not found");
             }
-          } catch (localError) {
-            console.warn("Local data failed, using hardcoded fallback:", localError.message);
-            
-            // Final fallback to hardcoded data
-            const fallbackProducts = [
-              {
-                id: 1,
-                name: "Premium Makhana",
-                description: "Handpicked fox nuts roasted with traditional methods",
-                price: 299,
-                category: "superfoods",
-                images: [{ url: "/Sweet-makhana.png", alt: "Premium Makhana" }],
-                isFeatured: true
-              }
-            ];
-            
-            const fallbackTestimonials = [
-              {
-                id: 1,
-                name: "Priya Sharma",
-                message: "Amazing products! Highly recommended.",
-                rating: 5,
-                location: "Mumbai, India"
-              }
-            ];
-            
-            setProducts(fallbackProducts.slice(0, 6));
-            setBestsellers(fallbackProducts.slice(0, 3));
-            setTestimonials(fallbackTestimonials);
+          } catch (publicError) {
+            console.warn(
+              "Public data failed, using imported data:",
+              publicError.message
+            );
+
+            // Final fallback to imported JSON data
+            const allProducts = productsData.products;
+            setProducts(allProducts.slice(0, 6));
+            setBestsellers(allProducts.slice(0, 3));
+            setTestimonials(testimonialsData.testimonials);
             return;
           }
         }
@@ -147,65 +145,18 @@ const Home = () => {
         const productsData = await productsResponse.json();
         const testimonialsData = await testimonialsResponse.json();
 
-        // Handle different response formats
-        let allProducts = [];
-        let allTestimonials = [];
-
-        // Products parsing
-        if (productsData.success && productsData.data && productsData.data.products) {
-          allProducts = productsData.data.products;
-        } else if (productsData.products) {
-          allProducts = productsData.products;
-        } else if (Array.isArray(productsData)) {
-          allProducts = productsData;
-        }
-
-        // Testimonials parsing
-        if (testimonialsData.success && testimonialsData.testimonials) {
-          allTestimonials = testimonialsData.testimonials;
-        } else if (testimonialsData.testimonials) {
-          allTestimonials = testimonialsData.testimonials;
-        } else if (Array.isArray(testimonialsData)) {
-          allTestimonials = testimonialsData;
-        }
-
-        // Ensure arrays
-        allProducts = Array.isArray(allProducts) ? allProducts : [];
-        allTestimonials = Array.isArray(allTestimonials) ? allTestimonials : [];
-
+        const allProducts = productsData.products;
         setProducts(allProducts.slice(0, 6));
         setBestsellers(allProducts.slice(0, 3));
-        setTestimonials(allTestimonials);
-
+        setTestimonials(testimonialsData.testimonials);
       } catch (error) {
         console.error("Error loading data:", error);
-        
-        // Ultimate fallback to hardcoded data
-        const fallbackProducts = [
-          {
-            id: 1,
-            name: "Premium Makhana",
-            description: "Handpicked fox nuts roasted with traditional methods",
-            price: 299,
-            category: "superfoods",
-            images: [{ url: "/Sweet-makhana.png", alt: "Premium Makhana" }],
-            isFeatured: true
-          }
-        ];
-        
-        const fallbackTestimonials = [
-          {
-            id: 1,
-            name: "Priya Sharma",
-            message: "Amazing products! Highly recommended.",
-            rating: 5,
-            location: "Mumbai, India"
-          }
-        ];
-        
-        setProducts(fallbackProducts.slice(0, 6));
-        setBestsellers(fallbackProducts.slice(0, 3));
-        setTestimonials(fallbackTestimonials);
+
+        // Ultimate fallback to imported data
+        const allProducts = productsData.products;
+        setProducts(allProducts.slice(0, 6));
+        setBestsellers(allProducts.slice(0, 3));
+        setTestimonials(testimonialsData.testimonials);
       } finally {
         setLoading(false);
       }
@@ -214,12 +165,7 @@ const Home = () => {
     loadData();
   }, []);
 
-  if (loading) {
-    return <Loader />;
-  }
-
   return (
-
     <div className="min-h-screen overflow-x-hidden max-w-full">
       {/* HERO BANNER SECTION - Absolutely no cropping with smooth circular animations */}
       <section
@@ -285,60 +231,12 @@ const Home = () => {
                 // Optional: Add any loading completion logic here
               }}
             />
-            <div className="absolute inset-0 bg-black/40" />
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Hero Content */}
-        <div className="relative z-10 flex items-center justify-center h-full">
-          <div className="text-center text-white px-4 sm:px-6 lg:px-8 max-w-4xl">
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl md:text-6xl font-bold mb-6"
-            >
-              Traditional Superfoods
-              <br />
-              <span className="text-green-400">For Modern Life</span>
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-lg md:text-xl mb-8 leading-relaxed"
-            >
-              Our kitchen celebrates traditional wisdom from the heart of India. 
-              Every product preserves ancient recipes while supporting rural artisans.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Link
-                to="/products"
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold transition-colors duration-300 shadow-lg"
-              >
-                Shop Now
-              </Link>
-              <Link
-                to="/about"
-                className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-8 py-4 rounded-full font-semibold transition-colors duration-300 border border-white/30"
-              >
-                Our Story
-              </Link>
-            </motion.div>
-          </div>
+          </AnimatePresence>
         </div>
 
         {/* Navigation Arrows - Enhanced with smooth hover animations */}
         <button
           onClick={goToPrevious}
-
           disabled={isTransitioning}
           className="absolute left-2 sm:left-4 md:left-6 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Previous image"
@@ -355,23 +253,11 @@ const Home = () => {
               strokeWidth="2"
               d="M15 19l-7-7 7-7"
             />
-
           </svg>
         </button>
-        
+
         <button
           onClick={goToNext}
-
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-2 rounded-full transition-colors duration-300 z-20"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        {/* Image Indicators */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-
           disabled={isTransitioning}
           className="absolute right-2 sm:right-4 md:right-6 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-300 group hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Next image"
@@ -433,11 +319,9 @@ const Home = () => {
 
         {/* Navigation Dots - Smoother interactions with active state animation */}
         <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 sm:space-x-3 z-30">
-
           {heroImages.map((_, index) => (
             <motion.button
               key={index}
-
               onClick={() => {
                 if (!isTransitioning) {
                   setDirection(index > currentImageIndex ? 1 : -1);
@@ -466,18 +350,33 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Products */}
-      {Array.isArray(products) && products.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Featured Products
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Discover our handpicked selection of premium traditional superfoods
-              </p>
+      {/* CREATIVE BRAND SECTION - Separate Section with Content */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 overflow-x-hidden overflow-y-hidden">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-neutral-800 mb-6 leading-tight break-words">
+                We Are{" "}
+                <span className="text-primary-500">Traditional Food</span>{" "}
+                Artisans
+              </h1>
+            </motion.div>
+          </div>
 
+          {/* Equal columns below header */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-stretch content-stretch">
+            {/* LEFT column */}
+            <div className="h-full">
+              <p className="text-base md:text-lg lg:text-xl text-neutral-600 mb-6 leading-relaxed max-w-3xl">
+                Our kitchen celebrates traditional wisdom from the heart of
+                India. Every product preserves ancient recipes while supporting
+                rural artisans.
+              </p>
 
               {/* Certifications: single line, no wrap, no x-scroll */}
               <div className="flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-start gap-2 sm:gap-3 md:gap-3 mb-8 px-2 sm:px-0 overflow-x-visible sm:overflow-x-clip">
@@ -538,7 +437,7 @@ const Home = () => {
 
                     <div className="text-center md:text-left">
                       <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto md:mx-0">
-                        <span className="text-2xl md:text-3xl">❤️</span>
+                        <span className="text-2xl md:text-3xl">❤</span>
                       </div>
                       <h3 className="font-semibold text-neutral-800 mb-2 text-sm md:text-base">
                         Made with Love
@@ -683,104 +582,111 @@ const Home = () => {
                 </svg>
               </button>
             </div>
+          )}
 
-            <div className="text-center mt-12">
-              <Link
-                to="/products"
-                className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors duration-300"
+          <motion.div
+            className="text-center mt-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            <Link to="/products" className="btn-primary">
+              View All Bestsellers
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Our Story Section */}
+      <section
+        id="our-story"
+        className="py-8 md:py-20 bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 overflow-x-hidden"
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <motion.div
+              className="text-center "
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-heading font-bold text-neutral-800 mb-6 leading-tight whitespace-nowrap">
+                We Are Preserving a Heritage of{" "}
+                <span className="text-primary-500">
+                  Traditional Indian SuperFoods
+                </span>
+              </h1>
+            </motion.div>
+
+            <div className="flex justify-center items-center max-h-screen px-4">
+              <motion.div
+                className="w-full max-w-[70vw] md:max-w-[75vw] lg:max-w-[80vw]"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
               >
-                View All Products
-                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
+                {/* Video Iframe */}
+                <div className="relative w-full h-[78vh] bg-gray-900 rounded-lg overflow-hidden shadow-2xl">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src="https://www.youtube.com/embed/tIxV269IutY"
+                    title="From The Soil Of India"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                  ></iframe>
+                </div>
+              </motion.div>
             </div>
           </div>
-</section>
-
-{/* All Products Section */}
-<section className="py-16 px-2 md:py-20 bg-neutral-50 overflow-hidden">
-  <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <motion.div
-      className="text-center mb-12"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      viewport={{ once: true }}
-    >
-      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-primary-500 mb-4">
-        Traditional Superfoods
-      </h2>
-    </motion.div>
-
-    {loading ? (
-      <Loader text="Loading products..." />
-    ) : (
-      <div className="relative">
-        {/* Horizontal Scrollable Container - 4 Cards Fully Visible */}
-        <div
-          id="product-scroll"
-          className="flex gap-6 pc-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
-          style={{
-            WebkitOverflowScrolling: "touch",
-            scrollPaddingLeft: "1.5rem",
-            scrollPaddingRight: "1.5rem",
-          }}
-        >
-          {products.map((product, index) => (
-            <div
-              key={product.id}
-              className="flex-shrink-0 snap-start"
-              style={{
-                width: "calc(25% - 18px)",
-                minWidth: "280px",
-              }}
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
         </div>
-      </div>
-    )}
-  </div>
-</section>
+      </section>
 
-{/* Customer Reviews Section */}
-{Array.isArray(testimonials) && testimonials.length > 0 && (
-  <section className="py-16 bg-white">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          What Our Customers Say
-        </h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Discover why thousands of customers choose these traditional superfoods for their daily nutrition.
-        </p>
-      </div>
+      {/* All Products Section */}
+      <section className="py-16 px-2 md:py-20 bg-neutral-50 overflow-hidden">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-primary-500 mb-4">
+              Traditional Superfoods
+            </h2>
+          </motion.div>
 
-      <div className="overflow-hidden">
-        <div ref={scrollRef} className="flex gap-6 pb-6 overflow-x-auto">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={testimonial.id || index}
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="flex-shrink-0 w-80"
-            >
-              {/* Render testimonial card here */}
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </section>
-)}
-
+          {loading ? (
+            <Loader text="Loading products..." />
+          ) : (
+            <div className="relative">
+              {/* Horizontal Scrollable Container - 4 Cards Fully Visible */}
+              <div
+                id="product-scroll"
+                className="flex gap-6 pc-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
+                style={{
+                  WebkitOverflowScrolling: "touch",
+                  scrollPaddingLeft: "1.5rem", // Account for gap
+                  scrollPaddingRight: "1.5rem",
+                }}
+              >
+                {products.map((product, index) => (
+                  <div
+                    key={product.id}
+                    className="flex-shrink-0 snap-start"
+                    style={{
+                      width: "calc(25% - 18px)", // 25% width minus gap (24px total gap / 4 * 3)
+                      minWidth: "280px", // Minimum width for mobile
+                    }}
                   >
-                    <TestimonialCard testimonial={testimonial} />
-                  </motion.div>
+                    <ProductCard product={product} index={index} />
+                  </div>
                 ))}
               </div>
 
@@ -841,59 +747,155 @@ const Home = () => {
                 </svg>
               </button>
             </div>
-          </div>
-        </section>
-      )}
+          )}
 
-      {/* Video Testimonials */}
-      {Array.isArray(videoTestimonials) && videoTestimonials.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Customer Stories
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Watch real customers share their experiences with our products
-              </p>
-            </div>
+          <motion.div
+            className="text-center mt-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            <Link to="/products" className="btn-primary">
+              Shop All Products
+            </Link>
+          </motion.div>
+        </div>
+      </section>
 
-            <div className="overflow-hidden">
-              <div ref={videoScrollRef} className="flex gap-6 pb-6 overflow-x-auto">
+      {/* Combined Testimonials Section - Video (9:16) and Text - INCREASED HEIGHT */}
+      <section className="py-20 md:py-24 bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 overflow-x-hidden min-h-screen">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-8"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-neutral-800 mb-6 leading-tight break-words">
+              Our Customers <span className="text-primary-500">Experience</span>
+            </h1>
+          </motion.div>
+
+          {/* Video Testimonials - Reel Style (9:16) with Horizontal Scroll */}
+          {!videoLoading && videoTestimonials.length > 0 && (
+            <div className="relative mb-15">
+              {/* Left Arrow for Video Scroll */}
+              <button
+                onClick={() =>
+                  videoScrollRef.current?.scrollBy({
+                    left: -300,
+                    behavior: "smooth",
+                  })
+                }
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-50 rounded-full shadow-lg p-3 transition-all duration-200 hover:scale-105"
+                aria-label="Scroll video testimonials left"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* Video Testimonials Container */}
+              <div
+                ref={videoScrollRef}
+                className="flex gap-4 overflow-x-auto scrollbar-hide px-12 py-6"
+                style={{
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  scrollBehavior: "smooth",
+                  scrollSnapType: "x mandatory",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
                 {videoTestimonials.map((testimonial, index) => (
-                  <motion.div
-                    key={testimonial.id || index}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="flex-shrink-0 w-64 cursor-pointer"
+                  <div
+                    key={testimonial.id}
+                    className="flex-shrink-0 w-48 md:w-56 lg:w-60 aspect-[9/16] rounded-2xl overflow-hidden shadow-lg cursor-pointer group relative"
+                    style={{ scrollSnapAlign: "start" }}
                     onClick={() => setActiveVideo(testimonial)}
                   >
-                    <div className="relative bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                      <div className="relative h-48 bg-gray-200">
-                        <img
-                          src={testimonial.thumbnail}
-                          alt={testimonial.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                          <div className="bg-white bg-opacity-90 rounded-full p-3">
-                            <svg className="w-6 h-6 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h4 className="font-semibold text-gray-900 mb-1">{testimonial.name}</h4>
-                        <p className="text-sm text-gray-600 mb-2">{testimonial.location}</p>
-                        <p className="text-xs text-gray-500">{testimonial.duration}</p>
+                    <img
+                      src={testimonial.thumbnail}
+                      alt={`${testimonial.name} testimonial`}
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+
+                    {/* Play Button */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <svg
+                          className="w-5 h-5 text-primary-600 ml-1"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
                       </div>
                     </div>
-                  </motion.div>
+
+                    {/* Customer Info */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <h4 className="text-sm font-semibold truncate">
+                        {testimonial.name}
+                      </h4>
+                      <p className="text-xs text-white/80 truncate">
+                        {testimonial.location}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <span key={i} className="text-yellow-400 text-xs">
+                            ⭐
+                          </span>
+                        ))}
+                        <span className="text-xs text-white/60 ml-2">
+                          {testimonial.duration}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
+
+              {/* Right Arrow for Video Scroll */}
+              <button
+                onClick={() =>
+                  videoScrollRef.current?.scrollBy({
+                    left: 300,
+                    behavior: "smooth",
+                  })
+                }
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white hover:bg-gray-50 rounded-full shadow-lg p-3 transition-all duration-200 hover:scale-105"
+                aria-label="Scroll video testimonials right"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
             </div>
           )}
 
@@ -1006,75 +1008,128 @@ const Home = () => {
               </svg>
             </div>
           </div>
-        </section>
-      )}
 
-      {/* Video Modal */}
-      <AnimatePresence>
-        {activeVideo && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"
-            onClick={() => setActiveVideo(null)}
-          >
+          {/* Video Modal */}
+          {activeVideo && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveVideo(null)}
             >
-              <div className="relative">
-                <button
-                  onClick={() => setActiveVideo(null)}
-                  className="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full p-2 z-10 hover:bg-opacity-70 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-                
-                <video
-                  controls
-                  autoPlay
-                  className="w-full aspect-video"
-                  poster={activeVideo.thumbnail}
-                >
-                  <source src={activeVideo.videoSrc} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-                
+              <motion.div
+                className="bg-white rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                      <span className="text-primary-600 font-semibold">
+                        {activeVideo.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-neutral-800">
+                        {activeVideo.name}
+                      </h3>
+                      <p className="text-sm text-neutral-500">
+                        {activeVideo.location}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveVideo(null)}
+                    className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div className="aspect-video">
+                  <iframe
+                    src={activeVideo.videoSrc}
+                    title={`${activeVideo.name} testimonial`}
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{activeVideo.name}</h3>
-                  <p className="text-gray-600 mb-3">{activeVideo.location}</p>
-                  <p className="text-gray-800 italic">"{activeVideo.fullQuote}"</p>
+                  <div className="flex items-center gap-1 mb-3">
+                    {[...Array(activeVideo.rating)].map((_, i) => (
+                      <span key={i} className="text-yellow-400">
+                        ⭐
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-neutral-700 italic">
+                    "{activeVideo.fullQuote}"
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Trust Indicators */}
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            <div className="flex flex-wrap justify-center items-center gap-4 md:gap-8 text-neutral-600">
+              <div className="flex items-center bg-white rounded-lg px-4 md:px-6 py-3 shadow-sm">
+                <span className="text-xl md:text-2xl mr-2 md:mr-3">⭐</span>
+                <div>
+                  <span className="font-semibold text-base md:text-lg">
+                    4.9/5
+                  </span>
+                  <span className="ml-2 text-xs md:text-sm">
+                    Average Rating
+                  </span>
                 </div>
               </div>
-            </motion.div>
+              <div className="flex items-center bg-white rounded-lg px-4 md:px-6 py-3 shadow-sm">
+                <span className="text-xl md:text-2xl mr-2 md:mr-3">📦</span>
+                <div>
+                  <span className="font-semibold text-base md:text-lg">
+                    500+
+                  </span>
+                  <span className="ml-2 text-xs md:text-sm">
+                    Happy Customers
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center bg-white rounded-lg px-4 md:px-6 py-3 shadow-sm">
+                <span className="text-xl md:text-2xl mr-2 md:mr-3">✅</span>
+                <div>
+                  <span className="font-semibold text-base md:text-lg">
+                    98%
+                  </span>
+                  <span className="ml-2 text-xs md:text-sm">
+                    Would Recommend
+                  </span>
+                </div>
+              </div>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-green-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Start Your Healthy Journey Today
-          </h2>
-          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who have made the switch to traditional superfoods
-          </p>
-          <Link
-            to="/products"
-            className="inline-flex items-center bg-white text-green-600 hover:bg-gray-50 px-8 py-4 rounded-full font-semibold transition-colors duration-300 shadow-lg"
-          >
-            Shop All Products
-            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
         </div>
       </section>
     </div>
